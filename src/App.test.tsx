@@ -53,6 +53,19 @@ beforeEach(() => {
 })
 
 describe('application integration', () => {
+  it('allows onboarding number fields to be cleared while editing', async () => {
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Next$/i }))
+    const adults = await screen.findByLabelText(/Adults \(18–64\)/i)
+
+    fireEvent.change(adults, { target: { value: '' } })
+    expect(adults).toHaveValue(null)
+
+    fireEvent.change(adults, { target: { value: '4' } })
+    expect(adults).toHaveValue(4)
+  })
+
   it('renders live model data without fake names or demo readings', async () => {
     render(<App />)
 

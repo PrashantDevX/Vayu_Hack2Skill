@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BUDGET_BANDS, COMMUTE_MODES } from '../constants/aqi'
 import type { Profile } from '../types'
 
@@ -8,6 +9,48 @@ interface ProfileFormProps {
   onChange: (profile: Profile) => void
   section?: Section
   idPrefix?: string
+}
+
+interface NumberFieldProps {
+  id: string
+  label: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  onChange: (value: number) => void
+}
+
+function NumberField({ id, label, value, min, max, step, onChange }: NumberFieldProps) {
+  const [text, setText] = useState(() => String(value))
+
+  const commit = (nextText: string) => {
+    setText(nextText)
+    if (nextText.trim() === '') return
+    const nextValue = Number(nextText)
+    if (!Number.isFinite(nextValue)) return
+    if (nextValue < min || nextValue > max) return
+    onChange(nextValue)
+  }
+
+  return (
+    <label htmlFor={id}>
+      {label}
+      <input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={min}
+        max={max}
+        step={step}
+        value={text}
+        onChange={event => commit(event.target.value)}
+        onBlur={() => {
+          if (text.trim() === '') setText(String(value))
+        }}
+      />
+    </label>
+  )
 }
 
 export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'profile' }: ProfileFormProps) {
@@ -23,18 +66,33 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
         <fieldset>
           <legend>Household</legend>
           <div className="form-grid">
-            <label htmlFor={`${idPrefix}-adults`}>
-              Adults (18–64)
-              <input id={`${idPrefix}-adults`} type="number" min={0} max={20} value={value.adults} onChange={event => set('adults', Number(event.target.value))} />
-            </label>
-            <label htmlFor={`${idPrefix}-children`}>
-              Children
-              <input id={`${idPrefix}-children`} type="number" min={0} max={20} value={value.children} onChange={event => set('children', Number(event.target.value))} />
-            </label>
-            <label htmlFor={`${idPrefix}-elderly`}>
-              Older adults (65+)
-              <input id={`${idPrefix}-elderly`} type="number" min={0} max={20} value={value.elderly} onChange={event => set('elderly', Number(event.target.value))} />
-            </label>
+            <NumberField
+              key={`${idPrefix}-adults-${value.adults}`}
+              id={`${idPrefix}-adults`}
+              label="Adults (18–64)"
+              value={value.adults}
+              min={0}
+              max={20}
+              onChange={next => set('adults', next)}
+            />
+            <NumberField
+              key={`${idPrefix}-children-${value.children}`}
+              id={`${idPrefix}-children`}
+              label="Children"
+              value={value.children}
+              min={0}
+              max={20}
+              onChange={next => set('children', next)}
+            />
+            <NumberField
+              key={`${idPrefix}-elderly-${value.elderly}`}
+              id={`${idPrefix}-elderly`}
+              label="Older adults (65+)"
+              value={value.elderly}
+              min={0}
+              max={20}
+              onChange={next => set('elderly', next)}
+            />
           </div>
           <div className="checkbox-grid">
             <label className="toggle-label" htmlFor={`${idPrefix}-outdoor`}>
@@ -63,10 +121,16 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
                 {COMMUTE_MODES.map(mode => <option key={mode}>{mode}</option>)}
               </select>
             </label>
-            <label htmlFor={`${idPrefix}-distance`}>
-              One-way distance (km)
-              <input id={`${idPrefix}-distance`} type="number" min={0} max={300} step={0.5} value={value.commuteDistanceKm} onChange={event => set('commuteDistanceKm', Number(event.target.value))} />
-            </label>
+            <NumberField
+              key={`${idPrefix}-distance-${value.commuteDistanceKm}`}
+              id={`${idPrefix}-distance`}
+              label="One-way distance (km)"
+              value={value.commuteDistanceKm}
+              min={0}
+              max={300}
+              step={0.5}
+              onChange={next => set('commuteDistanceKm', next)}
+            />
             <label htmlFor={`${idPrefix}-timing`}>
               Work or school timing
               <select id={`${idPrefix}-timing`} value={value.workTiming} onChange={event => set('workTiming', event.target.value as Profile['workTiming'])}>
@@ -91,10 +155,15 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
                 {['Good cross-ventilation', 'Single-side windows', 'Poor or sealed'].map(option => <option key={option}>{option}</option>)}
               </select>
             </label>
-            <label htmlFor={`${idPrefix}-area`}>
-              Bedroom area (sq ft)
-              <input id={`${idPrefix}-area`} type="number" min={20} max={5000} value={value.roomAreaSqFt} onChange={event => set('roomAreaSqFt', Number(event.target.value))} />
-            </label>
+            <NumberField
+              key={`${idPrefix}-area-${value.roomAreaSqFt}`}
+              id={`${idPrefix}-area`}
+              label="Bedroom area (sq ft)"
+              value={value.roomAreaSqFt}
+              min={20}
+              max={5000}
+              onChange={next => set('roomAreaSqFt', next)}
+            />
             <label htmlFor={`${idPrefix}-budget`}>
               Budget
               <select id={`${idPrefix}-budget`} value={value.budget} onChange={event => set('budget', event.target.value as Profile['budget'])}>
