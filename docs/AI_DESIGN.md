@@ -39,6 +39,14 @@ Browser → POST /api/plan  ──┘
 Model selection: `process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'`, temperature 0.2–0.25, JSON response MIME
 type, 700–900 output tokens, 18-second application-level timeout inside a 25-second function budget.
 
+Both handlers share `callGemini()` (`api/_lib/gemini.ts`), which owns that deadline. Google intermittently
+answers `503 UNAVAILABLE` ("currently experiencing high demand") for `gemini-3.5-flash-lite`; the rejection
+arrives in ~2 s while a successful brief takes ~9 s, so one retry usually recovers without approaching the
+budget. The retry applies only to transient statuses (`503`, `429`, `500/502/504`, `UNAVAILABLE`,
+`RESOURCE_EXHAUSTED`). A `400 INVALID_ARGUMENT` or `403 PERMISSION_DENIED` is a configuration fault and fails
+immediately — retrying it would only waste time. If every attempt fails, the failure ladder below runs
+unchanged. Provider error text is written to the server log, never to the client.
+
 ---
 
 ## 3. `/api/chat` — conversational assistant

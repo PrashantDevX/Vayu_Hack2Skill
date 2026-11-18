@@ -116,7 +116,9 @@ Request → rate limit → method check → body size check → JSON parse → Z
 ```
 
 `api/_lib/rateLimit.ts` is a fixed-window counter keyed by `x-forwarded-for`, with opportunistic eviction when
-the bucket map grows past 2,000 entries.
+the bucket map grows past 2,000 entries. `api/_lib/adapter.ts` bridges the Fetch-style handlers to Vercel's
+Node `(req, res)` runtime. `api/_lib/gemini.ts` owns the shared AI deadline and the single retry for transient
+provider overload, so `/api/chat` and `/api/plan` cannot drift apart.
 
 ---
 

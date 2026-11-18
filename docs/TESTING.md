@@ -13,8 +13,8 @@ npm run test:coverage  # v8 coverage, thresholds enforced
 Expected on `main`:
 
 ```
-Test Files  21 passed (21)
-Tests      125 passed (125)
+Test Files  22 passed (22)
+Tests      135 passed (135)
 ```
 
 ---
@@ -37,10 +37,10 @@ Measured 2026-11-18 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 92.95% (805/866) | 90% |
-| Branches | 81.64% (645/790) | 78% |
-| Functions | 95.17% (138/145) | 92% |
-| Lines | 96.42% (701/727) | 93% |
+| Statements | 93.14% (842/904) | 90% |
+| Branches | 81.31% (679/835) | 78% |
+| Functions | 96.59% (142/147) | 92% |
+| Lines | 96.29% (727/755) | 93% |
 
 Per-module highlights:
 
@@ -122,13 +122,14 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 
 | File | Focus |
 | --- | --- |
-| `api/chat.test.ts` (6) | deterministic fallback without a key; 405/400/413 paths; rate limit returns 429 without leaking the key name or value; mocked Gemini success produces a validated answer and a bounded `<user_question>` prompt; empty/malformed/unparseable/thrown output all fall back |
-| `api/plan.test.ts` (6) | unavailable without a key; 405/400; rate limit; mocked success with enum titles and prompt constraints; an over-long greeting is clamped at a word boundary instead of discarding a valid brief; invented section title rejected, empty and thrown responses produce specific reasons |
+| `api/chat.test.ts` (7) | deterministic fallback without a key; 405/400/413 paths; rate limit returns 429 without leaking the key name or value; mocked Gemini success produces a validated answer and a bounded `<user_question>` prompt; a 503 is retried once before succeeding; empty/malformed/unparseable/thrown output all fall back |
+| `api/plan.test.ts` (7) | unavailable without a key; 405/400; rate limit; mocked success with enum titles and prompt constraints; a 503 is retried once; an over-long greeting is clamped at a word boundary instead of discarding a valid brief; invented section title rejected, empty and thrown responses produce specific reasons |
 | `api/aqi.test.ts` (9) | unconfigured provider; city required; method check; official AQI record normalisation; station-distance pass-through with sanity bounds; pollutant-only rows surfaced as station concentrations with `aqi: null`; station grouping and completeness; "New Delhi" → "Delhi" fallback; rate-limit reason; provider failure; per-city caching |
 | `officialService.test.ts` (6) | pollutant-only payload accepted without inventing an AQI; published AQI classified; out-of-scale AQI rejected (not clamped); malformed concentrations rejected; provider reason passed through; Vite-dev and network failure messages |
 | `api/health.test.ts` (2) | flags reflect configuration; response never contains the secret value |
 | `api/_lib/adapter.test.ts` (10) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
-| `api/_lib/rateLimit.test.ts` (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
+| pi/_lib/rateLimit.test.ts (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
+| `api/_lib/gemini.test.ts` (8) | transient detection (503/429/5xx vs 400/403); success skips the retry; one retry after overload; no retry on a configuration fault; exhausted retries throw the last error; a hanging attempt times out within the deadline; an attempt cap of one |
 
 ### 4.6 Content guards — `src/constants/alternatives.test.ts` (4 tests)
 

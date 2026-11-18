@@ -63,7 +63,7 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 21 files | 125 tests pass |
+| `npm test` | Vitest, 22 files | 135 tests pass |
 | `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | ≥90% stmts, ≥78% branches, ≥92% fns, ≥93% lines |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~404 kB / ~126 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
@@ -84,6 +84,7 @@ api/                          Vercel serverless functions (nodejs runtime)
   health.ts                   GET  /api/health — provider configuration flags, no secrets
   _lib/rateLimit.ts           in-memory per-client fixed-window rate limiter
   _lib/adapter.ts             bridges Fetch-style handlers to Vercel's (req, res) runtime
+  _lib/gemini.ts              shared AI deadline: one retry on transient 503/429 overload
 scripts/
   check-providers.ps1         npm run check:providers — probes both providers, prints no keys
 src/
@@ -176,6 +177,12 @@ Plan:  DailyPlanner → requestAiBrief() → POST /api/plan → Zod validate →
 
 Gemini never sees secrets, never receives household names, and its output is bounded and validated.
 Section titles in `/api/plan` are a closed enum, so a hallucinated section is rejected wholesale.
+
+Both handlers call Gemini through `callGemini()` in `api/_lib/gemini.ts`: one overall 18 s deadline and
+**one retry** for transient overload (`503 UNAVAILABLE`, `429 RESOURCE_EXHAUSTED`, 5xx). The live model
+intermittently rejects under load, so a single retry turns a visible fallback into a real answer, while real
+configuration faults (400/403) fail immediately. If every attempt fails, the deterministic path above runs
+unchanged. Provider errors are logged server-side only.
 
 ### 5.4 Derived UI state
 
@@ -279,6 +286,9 @@ Changing any of these shapes requires updating: the Zod schema in the handler, t
 - **Cache is in-memory and per-process.** Serverless instances do not share it. That is intentional (no
   database, no cross-user leakage).
 - **Rate limiting is per-instance.** Good enough for abuse damping, not a billing guarantee.
+- **Gemini returns `503 UNAVAILABLE` intermittently.** It is upstream capacity, not a bug in the prompt. Both
+  endpoints retry once via `callGemini()`; do not remove that retry to "simplify" the handler, or the demo
+  will show the fallback card at random. Do not add retries for `400`/`403` — those are configuration faults.
 - **`dist/` is generated.** Never edit it; it is gitignored.
 - **Windows PowerShell 5.1 misreads BOM-less UTF-8.** Em dashes and smart quotes become string delimiters and
   break parsing. Keep `scripts/*.ps1` pure ASCII.
@@ -351,7 +361,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 125 tests / 21 files)
+- [ ] `npm test` green (currently 135 tests / 22 files)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links

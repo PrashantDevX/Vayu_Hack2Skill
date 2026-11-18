@@ -37,7 +37,7 @@ deployed Vercel project; without them the UI shows explicit "unavailable" states
 ```bash
 npm run typecheck      # tsc -b (app + node + api projects)
 npm run lint           # oxlint, zero warnings
-npm test               # 125 tests, 21 files
+npm test               # 135 tests, 22 files
 npm run test:coverage   # v8 coverage with enforced thresholds
 npm run build          # production build
 npm run check:providers # probe Gemini + data.gov.in with your .env keys
@@ -128,6 +128,8 @@ and community alternatives are qualitative — the app does not invent kilogram 
   secret disclosure, invented readings, diagnoses, prescriptions and ozone/DIY advice.
 - Every AI path has a deterministic fallback: `/api/chat` returns intent-based guidance built from the same
   context values, and `/api/plan` returns `source: 'unavailable'` so the deterministic plan stays visible.
+- Gemini intermittently returns `503 UNAVAILABLE` under load, so both endpoints retry once within the same
+  18 s deadline. Real configuration faults fail fast; provider errors are logged server-side only.
 - Rate limits: chat 20/min/client, plan 10/min, official AQI 60/min.
 
 Detail: [`docs/AI_DESIGN.md`](docs/AI_DESIGN.md).
@@ -170,11 +172,11 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 | `src/constants/alternatives.test.ts` | Required alternative fields, and a guard that fails if fabricated kg/tonne claims are added |
 
 ```
-Test Files  21 passed (21)
-Tests      125 passed (125)
+Test Files  22 passed (22)
+Tests      135 passed (135)
 
 Coverage (v8, utils/services/constants/api):
-Statements  92.95%   Branches 81.64%   Functions 95.17%   Lines 96.42%
+Statements  93.14%   Branches 81.31%   Functions 96.59%   Lines 96.42%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
