@@ -205,7 +205,13 @@ async function handler(req: Request): Promise<Response> {
       { source: 'gemini', greeting: validated.data.greeting ?? null, sections: validated.data.sections, sources: validated.data.sources },
       { headers: { 'Cache-Control': 'no-store' } },
     )
-  } catch {
+  } catch (error) {
+    // Server-side only. The client gets a generic reason so provider internals
+    // and configuration are never exposed.
+    console.error(
+      'plan: Gemini request failed:',
+      error instanceof Error ? error.message : error,
+    )
     return unavailable('Gemini is temporarily unavailable.')
   }
 }
