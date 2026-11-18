@@ -71,8 +71,8 @@ Client-visible configuration is limited to public Open-Meteo endpoints.
 | Coordinates | Range-checked (-90..90, -180..180) before acceptance |
 | Numeric inputs | Bounded by `min`/`max` and re-validated by `profileSchema` |
 
-The official adapter also bounds the AQI (0–500) and station distance (0–500 km) before display, and never
-converts pollutant-only records into an official AQI.
+The official adapter also bounds the AQI (0–500), station distance (0–500 km) and each pollutant
+concentration (0–100 000) before display. It never converts pollutant-only records into an official AQI.
 
 ---
 

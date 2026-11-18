@@ -63,11 +63,12 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 19 files | 105 tests pass |
+| `npm test` | Vitest, 20 files | 114 tests pass |
 | `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | ≥90% stmts, ≥78% branches, ≥92% fns, ≥93% lines |
-| `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~402 kB / ~125 kB gzip |
+| `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~404 kB / ~126 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `vercel dev` | Local Vercel runtime | `/api/chat`, `/api/plan`, `/api/aqi`, `/api/health` work |
+| `npm run check:providers` | Probes Gemini and data.gov.in with the `.env` credentials (never prints a key) | PASS per configured provider; `SKIP` when unset. Not a substitute for `vercel dev` |
 
 Always run `typecheck`, `lint`, `test` and `build` before declaring work done.
 
@@ -79,9 +80,11 @@ Always run `typecheck`, `lint`, `test` and `build` before declaring work done.
 api/                          Vercel serverless functions (nodejs runtime)
   chat.ts                     POST /api/chat — validated Gemini chat + deterministic fallback
   plan.ts                     POST /api/plan — optional validated Gemini daily brief
-  aqi.ts                      GET  /api/aqi  — best-effort data.gov.in official AQI adapter
+  aqi.ts                      GET  /api/aqi  — best-effort data.gov.in official station data
   health.ts                   GET  /api/health — provider configuration flags, no secrets
   lib/rateLimit.ts            in-memory per-client fixed-window rate limiter
+scripts/
+  check-providers.ps1         npm run check:providers — probes both providers, prints no keys
 src/
   types.ts                    all shared domain types (single source of truth)
   constants/aqi.ts            CPCB breakpoints, categories, budget/mode enums, defaults, cities
@@ -138,13 +141,28 @@ AppProvider(location) → useAirQuality → fetchAirQuality(location)
 ```
 fetchAirQuality → fetchOfficialAqi(city) → GET /api/aqi?city=…
   api/aqi.ts → api.data.gov.in/resource/{DATA_GOV_IN_RESOURCE_ID}?api-key=…
-    → normalize(): look for a usable AQI field; validate 0–500; optional station/distance/timestamp
+    → normalize(): prefer a usable AQI field (0–500). Otherwise group
+      pollutant-only rows (pollutant_id / avg_value) by station and return the
+      most complete station as official concentrations.
+    → retry once with the trailing place name ("New Delhi" → "Delhi") when the
+      exact city returns no rows
     → cache 10 min (available) / 3 min (unavailable)
 ```
 
-Hard rule in `normalize()`: **pollutant-only records are never converted into an official AQI.** If the
-resource has no AQI field, the result is `available: false` with an explanatory reason. Client-side
-`OfficialSnapshot` validates the shape again with Zod and rejects out-of-range values.
+The default resource is the CPCB "Real time Air Quality Index from various locations" dataset
+(`3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69`). Despite the title it has **no AQI field**: it publishes one row per
+pollutant per station. Those rows are official observations, so they are shown as official **station
+concentrations** alongside the station name and `last_update`.
+
+Hard rules in `normalize()`:
+
+- an official AQI is returned **only** when the provider actually supplies one;
+- pollutant-only records are never converted into an "official AQI";
+- CO is surfaced with `unit: 'as published'` because the dataset does not state its unit;
+- placeholder values (`NA`, `-`) are dropped, never zeroed.
+
+Client-side `OfficialSnapshot` re-validates the shape with Zod, rejects out-of-scale AQI values and requires
+finite pollutant concentrations.
 
 ### 5.3 AI path (optional, never authoritative)
 
@@ -223,7 +241,9 @@ Response (no AI): `{ source:'unavailable', sections:[], reason }`
 Rate limit 10/min/client. Body cap 16 kB. Prompt forbids contradicting the deterministic actions.
 
 ### `GET /api/aqi`
-Response: `{ available, aqi|null, station|null, distanceKm|null, observedAt|null, provider, reason|null }`
+Response: `{ available, aqi|null, station|null, distanceKm|null, observedAt|null, provider, reason|null, pollutants[] }`
+where `pollutants[] = { id, label, value, min|null, max|null, unit }` (max 12).
+`available: true` with `aqi: null` means the provider returned official concentrations but no AQI.
 Rate limit 60/min/client. `Cache-Control`: 10 min when available, `no-store` when not.
 
 Changing any of these shapes requires updating: the Zod schema in the handler, the client parser
@@ -279,7 +299,7 @@ Target: Vercel (static Vite build + serverless functions).
 | Variable | Purpose |
 | --- | --- |
 | `GEMINI_API_KEY` | Enables AI chat and AI daily brief |
-| `GEMINI_MODEL` | Overrides the default `gemini-2.0-flash` |
+| `GEMINI_MODEL` | Overrides the default `gemini-3.5-flash-lite` |
 | `DATA_GOV_IN_API_KEY` | data.gov.in API key for official AQI |
 | `DATA_GOV_IN_RESOURCE_ID` | data.gov.in resource id for the CPCB-linked dataset |
 
@@ -295,7 +315,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 105 tests / 19 files)
+- [ ] `npm test` green (currently 114 tests / 20 files)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links
@@ -309,9 +329,11 @@ Before reporting work complete:
 
 ## 13. Known limitations
 
-- **No official CPCB data by default.** `DATA_GOV_IN_API_KEY` / `DATA_GOV_IN_RESOURCE_ID` are not
-  configured, so the official card explains that no observation is available. The adapter is real but the
-  upstream dataset must be chosen per deployment.
+- **Official data needs a personal data.gov.in key.** The default resource is the CPCB real-time dataset,
+  which publishes station concentrations but **no AQI**. The public sample key is heavily rate-limited and
+  returns at most 10 records, so the demo can show "rate-limiting" or "no rows for this city". The adapter
+  surfaces official concentrations only; it never derives an official AQI. Generate a free key at
+  data.gov.in for a stable demo.
 - **Model AQI is an estimate.** Instantaneous CAMS fields are not CPCB 24 h/8 h averages, and no station
   observation is implied. This is stated in the UI, not hidden.
 - **No indoor sensor input.** Indoor advice is source-control and sizing guidance; no indoor concentration

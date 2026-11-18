@@ -167,7 +167,7 @@ export default async function handler(req: Request): Promise<Response> {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
     const result = await withTimeout(
       ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+        model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
         contents: buildPrompt(parsed.data),
         config: { responseMimeType: 'application/json', maxOutputTokens: 900, temperature: 0.25 },
       }),

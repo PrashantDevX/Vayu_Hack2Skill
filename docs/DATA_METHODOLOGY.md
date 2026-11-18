@@ -9,7 +9,7 @@ be called.
 
 | Priority | Source | Kind | Used for |
 | --- | --- | --- | --- |
-| 1 | `api.data.gov.in` resource (CPCB-linked), when configured | **Official observation** | The separate "Official station reading" card |
+| 1 | `api.data.gov.in` resource (CPCB-linked), when configured | **Official observation** | The separate "Official station" card: a published AQI when one exists, otherwise the station's published pollutant concentrations |
 | 2 | — (third-party sensor networks) | Not integrated | — |
 | 3 | Open-Meteo Air Quality (CAMS global model) | **Model estimate** | Dashboard AQI, pollutant table, hourly forecast, planner windows |
 
@@ -18,8 +18,8 @@ simulated. The app does not have a "demo data" mode; demo readings were removed 
 indistinguishable from live data.
 
 **The two tiers are never merged.** They have separate cards, separate labels, separate timestamps and
-separate wording. The dashboard AQI is always the model estimate; the official card is the only place an
-official number can appear.
+separate wording. The dashboard AQI is always the model estimate. The official card is the only place an
+official observation — a published AQI or the station's published concentrations — can appear.
 
 ---
 
@@ -113,20 +113,39 @@ Parsing them with `new Date()` would shift them into the browser timezone. Vayu:
 
 1. Rate limit 60/min per client.
 2. Require `city` (max 80 chars).
-3. Serve from a 10-minute cache when an official value is available, 3-minute cache otherwise.
+3. Serve from a 10-minute cache when official data is available, 3-minute cache otherwise.
 4. Without `DATA_GOV_IN_API_KEY` / `DATA_GOV_IN_RESOURCE_ID`, return
    `{ available: false, reason: "Official CPCB provider is not configured on this deployment." }`.
 5. Otherwise query `https://api.data.gov.in/resource/{id}` with `format=json`, `limit=100`, `filters[city]`.
-6. Normalise keys case- and punctuation-insensitively (`distance_km`, `distanceKm`, `distancekm` all match).
-7. Accept a record only if it contains a numeric AQI field (`aqi`, `airqualityindex`, `overallaqi`,
-   `aqivalue`, `aqi_value`) between 0 and 500.
-8. Pass through station name, optional station distance (0–500 km, one decimal) and timestamp **only when the
-   provider supplies them**.
-9. **Never** compute an AQI from pollutant-only records. A resource without an AQI field yields
-   `available: false` with an explanation.
+   If the exact city returns no rows, retry once with the trailing place name (`New Delhi` → `Delhi`,
+   `Navi Mumbai` → `Mumbai`).
+6. Normalise keys case- and punctuation-insensitively (`pollutant_id` / `pollutantId`, `avg_value` /
+   `pollutant_avg`).
+7. **If a record contains a numeric AQI field** (`aqi`, `airqualityindex`, `overallaqi`, `aqivalue`) between
+   0 and 500, return it as the official AQI.
+8. **Otherwise**, if the records are pollutant rows, group them by station and return the most complete
+   station as official concentrations. A station is the only valid grouping: the dataset publishes one row
+   per pollutant per station, and mixing stations would invent a station that does not exist.
+9. Drop placeholder values (`NA`, `-`, empty) instead of treating them as zero.
+10. Pass through station name, optional distance (0–500 km, one decimal) and `last_update` **only when the
+    provider supplies them**.
+11. **Never** compute an "official AQI" from pollutant-only records.
 
-The client re-validates the shape with Zod and rejects out-of-scale values, so a compromised or changed
-upstream response cannot inject a bogus official number.
+The default resource — `3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69`, "Real time Air Quality Index from various
+locations" — has no AQI field. It therefore produces `available: true` with `aqi: null` plus a
+`pollutants[]` array. The UI labels that card "Official station concentrations" and states that the index
+elsewhere in the app is the model estimate.
+
+`pollutants[]` entries are `{ id, label, value, min, max, unit }` where `id` is one of `PM25`, `PM10`,
+`NO2`, `SO2`, `CO`, `O3`, `NH3`. Particulates and gases are labelled µg/m³ (the CPCB reporting convention);
+CO is labelled `as published` because this dataset does not state its unit and the observed value
+distribution is not consistent with either µg/m³ or mg/m³. Asserting a unit would be a fabricated reading.
+
+If the provider answers `429`, the reason string says the key is being rate-limited rather than showing a
+number or a generic error.
+
+The client re-validates the shape with Zod, rejects out-of-scale AQI values and non-finite concentrations, so
+a changed or compromised upstream response cannot inject a bogus official number.
 
 ---
 

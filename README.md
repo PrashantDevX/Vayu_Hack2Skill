@@ -35,10 +35,14 @@ deployed Vercel project; without them the UI shows explicit "unavailable" states
 ```bash
 npm run typecheck      # tsc -b (app + node + api projects)
 npm run lint           # oxlint, zero warnings
-npm test               # 105 tests, 19 files
+npm test               # 114 tests, 20 files
 npm run test:coverage   # v8 coverage with enforced thresholds
 npm run build          # production build
+npm run check:providers # probe Gemini + data.gov.in with your .env keys
 ```
+
+`npm run check:providers` calls both providers directly and prints a PASS/FAIL table without ever echoing a
+key. It does not replace `vercel dev`: it tests the upstream credentials, not Vayu's own handlers.
 
 ### Environment variables (all optional)
 
@@ -47,9 +51,9 @@ Copy `.env.example` to `.env` for local serverless development. Nothing is requi
 | Variable | Enables |
 | --- | --- |
 | `GEMINI_API_KEY` | AI chat (`/api/chat`) and AI daily brief (`/api/plan`) |
-| `GEMINI_MODEL` | Override the default `gemini-2.0-flash` |
-| `DATA_GOV_IN_API_KEY` | Official CPCB-linked AQI via data.gov.in (`/api/aqi`) |
-| `DATA_GOV_IN_RESOURCE_ID` | data.gov.in resource id for the official dataset |
+| `GEMINI_MODEL` | Override the default `gemini-3.5-flash-lite` |
+| `DATA_GOV_IN_API_KEY` | Official CPCB station data via data.gov.in (`/api/aqi`) |
+| `DATA_GOV_IN_RESOURCE_ID` | data.gov.in resource id (defaults to the CPCB real-time dataset) |
 
 Without these, the deterministic planner, deterministic chat, and model-data dashboard remain fully usable.
 
@@ -83,7 +87,7 @@ Browser (React 19 + TypeScript + Vite)
 Vercel serverless (nodejs runtime)
 ├── /api/chat  ── Zod → bounded prompt → Gemini → Zod → fallback
 ├── /api/plan  ── Zod → bounded prompt → Gemini → Zod enum-checked sections
-├── /api/aqi   ── Best-effort data.gov.in official AQI, cached, never synthesised
+├── /api/aqi   ── Best-effort data.gov.in official station data, cached, never synthesised
 └── /api/health ── configuration flags only, never secrets
 ```
 
@@ -164,11 +168,11 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 | `src/constants/alternatives.test.ts` | Required alternative fields, and a guard that fails if fabricated kg/tonne claims are added |
 
 ```
-Test Files  19 passed (19)
-Tests      105 passed (105)
+Test Files  20 passed (20)
+Tests      114 passed (114)
 
 Coverage (v8, utils/services/constants/api):
-Statements  92.7%   Branches 81.1%   Functions 94.0%   Lines 95.8%
+Statements  92.74%   Branches 81.53%   Functions 94.53%   Lines 96.09%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -185,8 +189,10 @@ Detail: [`docs/TESTING.md`](docs/TESTING.md).
 4. Deploy. `vercel.json` provides SPA rewrites and security headers.
 5. Check `/api/health` — it reports `geminiConfigured` and `officialProviderConfigured` without exposing keys.
 
-If you enable the official provider, confirm your data.gov.in resource actually exposes an AQI field.
-Pollutant-only resources are reported as unavailable by design.
+If you enable the official provider, set `DATA_GOV_IN_RESOURCE_ID` (the example file already points at the CPCB
+real-time dataset). That dataset publishes station concentrations but no AQI, so the official card shows
+concentrations and states that it does not derive an official index. A resource that does expose an AQI field
+is used as-is.
 
 ---
 
@@ -237,9 +243,9 @@ Each requirement from the brief, and where it lives.
 | Structured JSON output, validated | Zod schemas on request and response; enum-constrained plan sections |
 | Security: no key exposure, validation, rate limits, headers, CSP | See `docs/SECURITY.md` |
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
-| Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~402 kB raw / ~125 kB gzip |
+| Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~404 kB raw / ~126 kB gzip |
 | Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion |
-| Testing: AQI, recommendations, direct fallback, impact maths | 105 tests; see `docs/TESTING.md` |
+| Testing: AQI, recommendations, direct fallback, impact maths | 114 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 
@@ -247,9 +253,12 @@ Each requirement from the brief, and where it lives.
 
 ## Known limitations
 
-- **Official CPCB data requires configuration.** Without a data.gov.in key and a resource that exposes an AQI
-  field, the official card states that no observation is available. The adapter never converts pollutant-only
-  records into an official AQI.
+- **Official CPCB data needs a personal data.gov.in key.** The default resource publishes station
+  concentrations but no AQI, so the official card shows concentrations and never derives an official index.
+  The public sample key is heavily rate-limited and returns at most 10 records; generate a free key for a
+  stable demo.
+- **CO's unit is not documented by the dataset.** Vayu shows it "as published" rather than asserting µg/m³ or
+  mg/m³, because the observed value distribution is consistent with neither.
 - **Model AQI is an estimate.** Instantaneous CAMS concentrations are not official 24-hour/8-hour averages.
 - **No indoor sensor input.** Indoor guidance is source control and sizing; no indoor concentration is
   predicted or claimed.

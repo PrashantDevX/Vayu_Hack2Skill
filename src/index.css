@@ -273,3 +273,12 @@ dialog.onboarding-modal { width:min(700px,calc(100vw - 24px)); inset:40px auto a
 .alternative-card dd { margin: 2px 0 0; font-size: 11px; line-height: 1.55; color: #55635a; }
 .alternative-card .data-note { margin-top: 8px; }
 @media (max-width: 1050px) { .alternatives-grid { grid-template-columns: 1fr; } }
+
+/* ---------- official station concentrations ---------- */
+.official-pollutants { width:100%; border-collapse:collapse; margin:14px 0 10px; font-size:11px; }
+.official-pollutants caption { text-align:left; font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:#929991; font-weight:800; padding-bottom:6px; }
+.official-pollutants th, .official-pollutants td { padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; }
+.official-pollutants thead th { font-size:8px; letter-spacing:.07em; text-transform:uppercase; color:#929991; font-weight:800; border-bottom:1px solid #d9ded5; }
+.official-pollutants tbody th { font-weight:700; color:#3c4a40; }
+.official-pollutants td { color:#55635a; }
+.official-pollutants td:last-child, .official-pollutants th:last-child { text-align:right; }

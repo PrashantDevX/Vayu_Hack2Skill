@@ -126,7 +126,7 @@ the bucket map grows past 2,000 entries.
 
 | Chunk | Raw | Gzip |
 | --- | --- | --- |
-| `index` (app shell + dashboard) | ~402 kB | ~125 kB |
+| `index` (app shell + dashboard) | ~404 kB | ~126 kB |
 | `AirQuality` (Recharts) | ~443 kB | ~124 kB |
 | other pages | 0.5–11 kB each | 0.3–4.7 kB each |
 
@@ -147,7 +147,7 @@ Every async surface has three explicit states, and the empty state never contain
 | --- | --- | --- | --- |
 | Model data | skeleton + location copy | AQI card + provenance | banner with reason and "Try again"; stale data marked |
 | Weather | omitted | temperature, humidity, wind | "Weather data is unavailable" (AQI still shown) |
-| Official data | n/a | station card | reason string, e.g. "not configured" |
+| Official data | n/a | published AQI, or the station's published concentrations | reason string, e.g. "not configured" or "rate-limiting this API key" |
 | AI chat | "preparing guidance…" | answer + sources | deterministic answer labelled as fallback |
 | AI plan | button spinner | sections + sources | `source: 'unavailable'` with reason; deterministic plan remains |
 | Geocoding | "Searching…" | result list | message with manual-coordinate alternative |

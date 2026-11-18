@@ -36,7 +36,7 @@ Browser → POST /api/plan  ──┘
 - There is no client-side SDK usage and no key in the bundle. The CSP also restricts `connect-src` to the
   three Open-Meteo hosts plus `'self'`.
 
-Model selection: `process.env.GEMINI_MODEL || 'gemini-2.0-flash'`, temperature 0.2–0.25, JSON response MIME
+Model selection: `process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'`, temperature 0.2–0.25, JSON response MIME
 type, 700–900 output tokens, 18-second application-level timeout inside a 25-second function budget.
 
 ---

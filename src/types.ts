@@ -68,6 +68,16 @@ export interface ModelSnapshot {
   averagingNote: string
 }
 
+export interface OfficialPollutant {
+  /** Canonical key: PM25, PM10, NO2, SO2, CO, O3, NH3. */
+  id: string
+  label: string
+  value: number
+  min: number | null
+  max: number | null
+  unit: string
+}
+
 export interface OfficialSnapshot {
   available: boolean
   aqi: number | null
@@ -78,6 +88,11 @@ export interface OfficialSnapshot {
   observedAt: string | null
   provider: string
   reason: string | null
+  /**
+   * Official station concentrations. Used when the configured resource publishes
+   * pollutants but no AQI field, which is the case for the CPCB real-time dataset.
+   */
+  pollutants: OfficialPollutant[]
 }
 
 export interface AirQualitySnapshot {

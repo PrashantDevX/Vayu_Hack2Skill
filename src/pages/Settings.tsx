@@ -82,7 +82,16 @@ export default function Settings() {
           </div>
           <dl className="status-list">
             <div><dt>Model provider</dt><dd>Open-Meteo CAMS</dd></div>
-            <div><dt>Official CPCB resource</dt><dd>{official?.available ? 'Configured and returning data' : official?.reason ?? 'Not configured'}</dd></div>
+            <div>
+              <dt>Official CPCB resource</dt>
+              <dd>
+                {official?.available
+                  ? official.aqi !== null
+                    ? 'Configured — official AQI received'
+                    : 'Configured — official station concentrations (resource has no AQI field)'
+                  : official?.reason ?? 'Not configured'}
+              </dd>
+            </div>
             <div><dt>Last successful fetch</dt><dd>{air.data?.model.fetchedAt ? new Date(air.data.model.fetchedAt).toLocaleString() : 'Unavailable'}</dd></div>
           </dl>
           <p className="data-note">

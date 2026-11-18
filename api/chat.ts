@@ -140,7 +140,7 @@ ${parsed.data.message}
 
     const result = await withTimeout(
       ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+        model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
         contents: prompt,
         config: { responseMimeType: 'application/json', maxOutputTokens: 700, temperature: 0.2 },
       }),

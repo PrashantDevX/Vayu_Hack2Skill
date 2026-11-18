@@ -52,12 +52,14 @@ trust signal in the app.
 1. Note the provenance strip: provider, model, "Updated x min ago", and the averaging-period caveat.
 2. Read the pollutant table: every value, its sub-index, and the CPCB averaging period. Point out that
    unavailable pollutants show "Unavailable", not zero.
-3. Scroll to the **official** card. It either shows a station reading (provider, station, distance if
-   supplied, timestamp) or explains precisely why no official observation is available.
+3. Scroll to the **official** card. With a data.gov.in key it shows either a published AQI, or the station's
+   published concentrations (station, `last_update`, provider). Without a key, or when the provider is
+   rate-limiting, it explains precisely why no official observation is available.
 4. Show the 24-hour chart, then open **"View the hourly data as a table"** — same data, accessible.
 
-**Say:** "Model and official are separate cards, separate providers, separate numbers. Pollutant-only
-government records are never converted into an official AQI — the adapter refuses."
+**Say:** "Model and official are separate cards, separate providers, separate numbers. The government
+dataset publishes station concentrations but not an AQI, so we show the concentrations and refuse to invent
+an official index from them."
 
 ---
 
@@ -150,7 +152,7 @@ it reaches the DOM."
 - CPCB methodology implemented and tested, including the coverage rule.
 - Model vs official separation that survives on screen.
 - AI that is validated, rate-limited and optional.
-- 105 tests, coverage gate, clean typecheck and lint, production build.
+- 114 tests, coverage gate, clean typecheck and lint, production build.
 
 ---
 
@@ -159,7 +161,9 @@ it reaches the DOM."
 | If this happens | Do this |
 | --- | --- |
 | Network blocked / provider down | Keep going. Point at the unavailable state and the absence of a fake number. |
-| Official card shows "not configured" | "That's the honest default. The adapter is implemented; it needs a data.gov.in key and an AQI-bearing resource." |
+| Official card shows "not configured" | "That's the honest default. Set `DATA_GOV_IN_API_KEY` and the CPCB resource id; without them Vayu shows no official observation rather than a guess." |
+| Official card says the key is rate-limited | "That's the public sample key hitting data.gov.in's limit. A personal key fixes it, and the app still shows the model estimate." |
+| Official card shows concentrations but no index | "The CPCB dataset has no AQI field. We show the official concentrations as published and won't fabricate an official index from them." |
 | AI brief says unavailable | "Expected without a key. The deterministic plan is the product; AI is additive." |
 | Geocoding fails | Use a popular-city chip, or enter coordinates manually. |
 | Chart looks empty | The provider returned no hourly points; open the data table to show the same state honestly. |

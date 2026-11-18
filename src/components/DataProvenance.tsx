@@ -23,22 +23,77 @@ export function ProvenanceNote({ provider, model, fetchedAt, stale, averagingNot
   )
 }
 
+function formatConcentration(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
 export function OfficialCard({ official }: { official: OfficialSnapshot }) {
+  const hasAqi = official.available && official.aqi !== null
+  const hasPollutants = official.available && official.pollutants.length > 0
+  const heading = hasAqi
+    ? 'Official station reading'
+    : hasPollutants
+      ? 'Official station concentrations'
+      : 'Official data unavailable'
+
   return (
     <section className="official-card" aria-labelledby="official-heading">
       <div className="card-heading">
         <div>
           <small>OFFICIAL / THIRD-PARTY OBSERVATION</small>
-          <h2 id="official-heading">{official.available ? 'Official station reading' : 'Official data unavailable'}</h2>
+          <h2 id="official-heading">{heading}</h2>
         </div>
         {official.available ? <ShieldCheck size={20} /> : <CloudSun size={20} />}
       </div>
+
+      {hasAqi && (
+        <div className="official-main">
+          <strong>{official.aqi}</strong>
+          <span>{official.category ?? 'Unclassified'}</span>
+        </div>
+      )}
+
       {official.available ? (
         <>
-          <div className="official-main">
-            <strong>{official.aqi}</strong>
-            <span>{official.category ?? 'Unclassified'}</span>
-          </div>
+          {hasPollutants && (
+            <>
+              <table className="official-pollutants">
+                <caption>Concentrations published by the official provider</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pollutant</th>
+                    <th scope="col">Average</th>
+                    <th scope="col">Reported range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {official.pollutants.map(item => (
+                    <tr key={item.id}>
+                      <th scope="row">{item.label}</th>
+                      <td>
+                        {formatConcentration(item.value)} {item.unit}
+                      </td>
+                      <td>
+                        {item.min !== null && item.max !== null
+                          ? `${formatConcentration(item.min)}–${formatConcentration(item.max)} ${item.unit}`
+                          : 'Not reported'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!hasAqi && (
+                <p className="data-note">
+                  This resource publishes station concentrations but not the CPCB AQI. Vayu reproduces the values
+                  exactly as published and does not derive an official AQI from them; the index elsewhere in the app
+                  is the model estimate. Particulates and gases are shown in µg/m³, the CPCB reporting convention.
+                  CO is shown “as published” because this dataset does not state its unit. Averaging periods and
+                  quality control are set by the provider, not by Vayu.
+                </p>
+              )}
+            </>
+          )}
+
           <dl className="official-meta">
             <div><dt>Station</dt><dd>{official.station ?? 'Not reported'}</dd></div>
             {official.distanceKm !== null && (

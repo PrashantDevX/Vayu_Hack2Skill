@@ -13,8 +13,8 @@ npm run test:coverage  # v8 coverage, thresholds enforced
 Expected on `main`:
 
 ```
-Test Files  19 passed (19)
-Tests      105 passed (105)
+Test Files  20 passed (20)
+Tests      114 passed (114)
 ```
 
 ---
@@ -37,21 +37,22 @@ Measured 2026-11-18 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 92.73% (651/702) | 90% |
-| Branches | 81.10% (528/651) | 78% |
-| Functions | 94.01% (110/117) | 92% |
-| Lines | 95.81% (573/598) | 93% |
+| Statements | 92.74% (729/786) | 90% |
+| Branches | 81.53% (596/731) | 78% |
+| Functions | 94.53% (121/128) | 92% |
+| Lines | 96.09% (639/665) | 93% |
 
 Per-module highlights:
 
 | File | Statements | Branches |
 | --- | --- | --- |
-| `api/aqi.ts` | 90.3% | 86.2% |
+| `api/aqi.ts` | 89.5% | 82.6% |
 | `api/chat.ts` | 92.7% | 71.7% |
 | `api/plan.ts` | 83.0% | 65.9% |
-| `src/services/aqiService.ts` | 92.3% | 74.5% |
+| `src/services/aqiService.ts` | 92.3% | 76.6% |
 | `src/services/geocodingService.ts` | 100% | 100% |
 | `src/services/http.ts` | 95.1% | 90.0% |
+| `src/services/officialService.ts` | 96.9% | 91.9% |
 | `src/utils/aqi.ts` | 92.2% | 84.3% |
 | `src/utils/impact.ts` | 98.4% | 98.2% |
 | `src/constants/aqi.ts` | 100% | 100% |
@@ -123,7 +124,8 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 | --- | --- |
 | `api/chat.test.ts` (6) | deterministic fallback without a key; 405/400/413 paths; rate limit returns 429 without leaking the key name or value; mocked Gemini success produces a validated answer and a bounded `<user_question>` prompt; empty/malformed/unparseable/thrown output all fall back |
 | `api/plan.test.ts` (5) | unavailable without a key; 405/400; rate limit; mocked success with enum titles and prompt constraints; invented section title rejected, empty and thrown responses produce specific reasons |
-| `api/aqi.test.ts` (6) | unconfigured provider; city required; method check; official record normalisation; station-distance pass-through with sanity bounds; invalid distance dropped; pollutant-only record rejected; provider failure; per-city caching |
+| `api/aqi.test.ts` (9) | unconfigured provider; city required; method check; official AQI record normalisation; station-distance pass-through with sanity bounds; pollutant-only rows surfaced as station concentrations with `aqi: null`; station grouping and completeness; "New Delhi" → "Delhi" fallback; rate-limit reason; provider failure; per-city caching |
+| `officialService.test.ts` (6) | pollutant-only payload accepted without inventing an AQI; published AQI classified; out-of-scale AQI rejected (not clamped); malformed concentrations rejected; provider reason passed through; Vite-dev and network failure messages |
 | `api/health.test.ts` (2) | flags reflect configuration; response never contains the secret value |
 | `api/lib/rateLimit.test.ts` (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
 
