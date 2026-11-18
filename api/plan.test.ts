@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import handler from './plan'
-import { clearRateLimits } from './lib/rateLimit'
+import { clearRateLimits } from './_lib/rateLimit'
 
 const { generateContent } = vi.hoisted(() => ({ generateContent: vi.fn() }))
 

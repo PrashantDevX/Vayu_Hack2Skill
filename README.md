@@ -190,9 +190,14 @@ Live at **https://vayu-wheat.vercel.app**.
 1. Push the repository and import it into Vercel (framework preset: **Vite**).
 2. Build command `npm run build`, output directory `dist`.
 3. Add any of the four environment variables above (Project → Settings → Environment Variables).
-4. Deploy. `vercel.json` provides SPA rewrites and security headers; `.vercelignore` keeps test files,
-   `coverage/`, `docs/` and `scripts/` out of the upload.
+4. Deploy. `vercel.json` provides SPA rewrites, security headers and the `bom1` function region;
+   `.vercelignore` keeps test files, `coverage/`, `docs/` and `scripts/` out of the upload.
 5. Check `/api/health` — it reports `geminiConfigured` and `officialProviderConfigured` without exposing keys.
+
+**The function region matters.** `vercel.json` pins `"regions": ["bom1"]` because data.gov.in is served from
+India's NIC and refuses connections from Vercel's default US region (`ECONNREFUSED 164.100.61.198:443`).
+Without it the official card reports "temporarily unavailable" in production even though the same code works
+locally.
 
 The Vercel project is connected to this GitHub repository, so a push to `main` deploys to production and any
 other branch creates a preview deployment. If you import the project yourself, confirm that

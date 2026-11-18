@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import handler, { clearOfficialCache } from './aqi'
-import { clearRateLimits } from './lib/rateLimit'
+import { clearRateLimits } from './_lib/rateLimit'
 
 function request(city = 'New Delhi', ip = '10.2.0.1', method = 'GET') {
   return new Request(`https://vayu.test/api/aqi?city=${encodeURIComponent(city)}`, {

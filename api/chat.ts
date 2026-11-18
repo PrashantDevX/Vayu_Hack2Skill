@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { GoogleGenAI } from '@google/genai'
-import { withVercelRuntime } from './lib/adapter.js'
-import { checkRateLimit, clientKey } from './lib/rateLimit.js'
+import { withVercelRuntime } from './_lib/adapter.js'
+import { checkRateLimit, clientKey } from './_lib/rateLimit.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 25 }
 

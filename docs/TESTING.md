@@ -127,8 +127,8 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 | `api/aqi.test.ts` (9) | unconfigured provider; city required; method check; official AQI record normalisation; station-distance pass-through with sanity bounds; pollutant-only rows surfaced as station concentrations with `aqi: null`; station grouping and completeness; "New Delhi" → "Delhi" fallback; rate-limit reason; provider failure; per-city caching |
 | `officialService.test.ts` (6) | pollutant-only payload accepted without inventing an AQI; published AQI classified; out-of-scale AQI rejected (not clamped); malformed concentrations rejected; provider reason passed through; Vite-dev and network failure messages |
 | `api/health.test.ts` (2) | flags reflect configuration; response never contains the secret value |
-| `api/lib/adapter.test.ts` (10) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
-| `api/lib/rateLimit.test.ts` (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
+| `api/_lib/adapter.test.ts` (10) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
+| `api/_lib/rateLimit.test.ts` (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
 
 ### 4.6 Content guards — `src/constants/alternatives.test.ts` (4 tests)
 

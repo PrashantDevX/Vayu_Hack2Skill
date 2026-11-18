@@ -1,4 +1,4 @@
-import { withVercelRuntime } from './lib/adapter.js'
+import { withVercelRuntime } from './_lib/adapter.js'
 
 export const config = { runtime: 'nodejs' }
 

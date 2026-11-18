@@ -115,7 +115,7 @@ Request → rate limit → method check → body size check → JSON parse → Z
         → validated response  |  labelled fallback
 ```
 
-`api/lib/rateLimit.ts` is a fixed-window counter keyed by `x-forwarded-for`, with opportunistic eviction when
+`api/_lib/rateLimit.ts` is a fixed-window counter keyed by `x-forwarded-for`, with opportunistic eviction when
 the bucket map grows past 2,000 entries.
 
 ---
