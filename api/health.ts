@@ -1,6 +1,8 @@
+import { withVercelRuntime } from './lib/adapter.js'
+
 export const config = { runtime: 'nodejs' }
 
-export default function handler() {
+function handler() {
   return Response.json(
     {
       status: 'ok',
@@ -13,3 +15,5 @@ export default function handler() {
     { headers: { 'Cache-Control': 'no-store' } },
   )
 }
+
+export default withVercelRuntime(handler)

@@ -139,6 +139,11 @@ Because the title is an enum, a hallucinated or off-topic section causes the ent
 rather than partially rendered. That is deliberate: a plan section called "Buy an ozone generator" cannot
 reach the DOM.
 
+`greeting` is capped at 160 characters, and live `gemini-3.5-flash-lite` output routinely lands around 180.
+That is a length overshoot on decorative prose, not an invented section, so the handler clamps it at a word
+boundary (`normalizeBrief`) instead of discarding a brief whose sections are all valid. Section titles are
+never relaxed: a title outside the enum still rejects the whole brief.
+
 ### Unavailable response
 
 ```json

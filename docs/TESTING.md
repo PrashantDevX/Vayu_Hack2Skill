@@ -13,8 +13,8 @@ npm run test:coverage  # v8 coverage, thresholds enforced
 Expected on `main`:
 
 ```
-Test Files  20 passed (20)
-Tests      114 passed (114)
+Test Files  21 passed (21)
+Tests      125 passed (125)
 ```
 
 ---
@@ -37,10 +37,10 @@ Measured 2026-11-18 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 92.74% (729/786) | 90% |
-| Branches | 81.53% (596/731) | 78% |
-| Functions | 94.53% (121/128) | 92% |
-| Lines | 96.09% (639/665) | 93% |
+| Statements | 92.95% (805/866) | 90% |
+| Branches | 81.64% (645/790) | 78% |
+| Functions | 95.17% (138/145) | 92% |
+| Lines | 96.42% (701/727) | 93% |
 
 Per-module highlights:
 
@@ -123,10 +123,11 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 | File | Focus |
 | --- | --- |
 | `api/chat.test.ts` (6) | deterministic fallback without a key; 405/400/413 paths; rate limit returns 429 without leaking the key name or value; mocked Gemini success produces a validated answer and a bounded `<user_question>` prompt; empty/malformed/unparseable/thrown output all fall back |
-| `api/plan.test.ts` (5) | unavailable without a key; 405/400; rate limit; mocked success with enum titles and prompt constraints; invented section title rejected, empty and thrown responses produce specific reasons |
+| `api/plan.test.ts` (6) | unavailable without a key; 405/400; rate limit; mocked success with enum titles and prompt constraints; an over-long greeting is clamped at a word boundary instead of discarding a valid brief; invented section title rejected, empty and thrown responses produce specific reasons |
 | `api/aqi.test.ts` (9) | unconfigured provider; city required; method check; official AQI record normalisation; station-distance pass-through with sanity bounds; pollutant-only rows surfaced as station concentrations with `aqi: null`; station grouping and completeness; "New Delhi" → "Delhi" fallback; rate-limit reason; provider failure; per-city caching |
 | `officialService.test.ts` (6) | pollutant-only payload accepted without inventing an AQI; published AQI classified; out-of-scale AQI rejected (not clamped); malformed concentrations rejected; provider reason passed through; Vite-dev and network failure messages |
 | `api/health.test.ts` (2) | flags reflect configuration; response never contains the secret value |
+| `api/lib/adapter.test.ts` (10) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
 | `api/lib/rateLimit.test.ts` (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
 
 ### 4.6 Content guards — `src/constants/alternatives.test.ts` (4 tests)

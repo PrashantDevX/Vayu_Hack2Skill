@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { GoogleGenAI } from '@google/genai'
+import { withVercelRuntime } from './lib/adapter.js'
 import { checkRateLimit, clientKey } from './lib/rateLimit.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 25 }
@@ -79,7 +80,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   })
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   const limit = checkRateLimit(`chat:${clientKey(req)}`, 20)
   if (!limit.allowed) {
     return Response.json(
@@ -160,3 +161,5 @@ ${parsed.data.message}
     return Response.json(fallbackResponse, { headers: { 'Cache-Control': 'no-store' } })
   }
 }
+
+export default withVercelRuntime(handler)

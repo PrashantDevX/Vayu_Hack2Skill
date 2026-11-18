@@ -7,6 +7,8 @@ than invents.
 
 Built for Hack2Skill PromptWars Challenge 6 (Urban Air Quality Assistant).
 
+**Live:** https://vayu-wheat.vercel.app — deployed from `main`, so every push redeploys automatically.
+
 ---
 
 ## Why this exists
@@ -35,7 +37,7 @@ deployed Vercel project; without them the UI shows explicit "unavailable" states
 ```bash
 npm run typecheck      # tsc -b (app + node + api projects)
 npm run lint           # oxlint, zero warnings
-npm test               # 114 tests, 20 files
+npm test               # 125 tests, 21 files
 npm run test:coverage   # v8 coverage with enforced thresholds
 npm run build          # production build
 npm run check:providers # probe Gemini + data.gov.in with your .env keys
@@ -168,11 +170,11 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 | `src/constants/alternatives.test.ts` | Required alternative fields, and a guard that fails if fabricated kg/tonne claims are added |
 
 ```
-Test Files  20 passed (20)
-Tests      114 passed (114)
+Test Files  21 passed (21)
+Tests      125 passed (125)
 
 Coverage (v8, utils/services/constants/api):
-Statements  92.74%   Branches 81.53%   Functions 94.53%   Lines 96.09%
+Statements  92.95%   Branches 81.64%   Functions 95.17%   Lines 96.42%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -183,11 +185,22 @@ Detail: [`docs/TESTING.md`](docs/TESTING.md).
 
 ## Deployment
 
+Live at **https://vayu-wheat.vercel.app**.
+
 1. Push the repository and import it into Vercel (framework preset: **Vite**).
 2. Build command `npm run build`, output directory `dist`.
 3. Add any of the four environment variables above (Project → Settings → Environment Variables).
-4. Deploy. `vercel.json` provides SPA rewrites and security headers.
+4. Deploy. `vercel.json` provides SPA rewrites and security headers; `.vercelignore` keeps test files,
+   `coverage/`, `docs/` and `scripts/` out of the upload.
 5. Check `/api/health` — it reports `geminiConfigured` and `officialProviderConfigured` without exposing keys.
+
+The Vercel project is connected to this GitHub repository, so a push to `main` deploys to production and any
+other branch creates a preview deployment. If you import the project yourself, confirm that
+**Deployment Protection** is disabled — otherwise every `*.vercel.app` URL redirects to a Vercel login and the
+judges cannot open it.
+
+Every file under `api/` becomes a serverless function. Test files are excluded via `.vercelignore`; verify
+with `vercel inspect <deployment-url>` that only `api/aqi`, `api/chat`, `api/plan` and `api/health` are built.
 
 If you enable the official provider, set `DATA_GOV_IN_RESOURCE_ID` (the example file already points at the CPCB
 real-time dataset). That dataset publishes station concentrations but no AQI, so the official card shows

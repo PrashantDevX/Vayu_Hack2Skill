@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { GoogleGenAI } from '@google/genai'
+import { withVercelRuntime } from './lib/adapter.js'
 import { checkRateLimit, clientKey } from './lib/rateLimit.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 25 }
@@ -92,8 +93,27 @@ function extractJson(text: string): unknown {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
+/**
+ * The greeting is short prose, not a measurement. The model reliably overshoots
+ * the 160-character schema cap, and rejecting the whole brief for that throws
+ * away eight valid sections. Clamp it at a word boundary instead.
+ */
+function clampGreeting(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const trimmed = value.trim()
+  if (trimmed.length <= 160) return trimmed
+  const slice = trimmed.slice(0, 160)
+  const lastSpace = slice.lastIndexOf(' ')
+  return (lastSpace > 100 ? slice.slice(0, lastSpace) : slice).trimEnd()
+}
+
+function normalizeBrief(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+  const draft = raw as Record<string, unknown>
+  return { ...draft, greeting: clampGreeting(draft.greeting) }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {  return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('AI request timed out')), ms)
     promise.then(
       value => {
@@ -114,6 +134,7 @@ function buildPrompt(body: PlanBody): string {
     .join('\n')
   return `You are Vayu, an environmental-health planner for an urban household.
 Return JSON only: {"greeting": string, "sections": [{"title": one of the eight titles, "guidance": string}], "sources": string[]}.
+Keep the greeting under 140 characters.
 Section titles must be chosen from: Morning routine, Commute, Outdoor activity, Indoor environment, School and children, Elderly precautions, Evening routine, Night-time environment.
 Write 3–6 sections. Each guidance must be 20–350 characters, practical, and explain briefly why. Do not repeat numeric AQI values unless they appear in the context. Do not invent measurements, health benefits, diagnoses, medication or costs. Do not tell the user to ignore medical advice. Never recommend ozone generators or unsafe DIY electrical devices. Do not claim an immediate city AQI change from personal transport changes.
 Context:
@@ -133,7 +154,7 @@ ${actions || 'none'}
 Do not contradict these actions. Explain and prioritize them.`
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   const limit = checkRateLimit(`plan:${clientKey(req)}`, 10)
   if (!limit.allowed) {
     return Response.json(
@@ -177,7 +198,7 @@ export default async function handler(req: Request): Promise<Response> {
     const text = result.text?.trim()
     if (!text) return unavailable('Gemini returned an empty brief.')
 
-    const validated = briefSchema.safeParse(extractJson(text))
+    const validated = briefSchema.safeParse(normalizeBrief(extractJson(text)))
     if (!validated.success) return unavailable('Gemini returned an invalid brief.')
 
     return Response.json(
@@ -188,3 +209,5 @@ export default async function handler(req: Request): Promise<Response> {
     return unavailable('Gemini is temporarily unavailable.')
   }
 }
+
+export default withVercelRuntime(handler)

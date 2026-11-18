@@ -63,7 +63,7 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 20 files | 114 tests pass |
+| `npm test` | Vitest, 21 files | 125 tests pass |
 | `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | ≥90% stmts, ≥78% branches, ≥92% fns, ≥93% lines |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~404 kB / ~126 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
@@ -83,6 +83,7 @@ api/                          Vercel serverless functions (nodejs runtime)
   aqi.ts                      GET  /api/aqi  — best-effort data.gov.in official station data
   health.ts                   GET  /api/health — provider configuration flags, no secrets
   lib/rateLimit.ts            in-memory per-client fixed-window rate limiter
+  lib/adapter.ts              bridges Fetch-style handlers to Vercel's (req, res) runtime
 scripts/
   check-providers.ps1         npm run check:providers — probes both providers, prints no keys
 src/
@@ -240,6 +241,11 @@ Response (AI): `{ source:'gemini', greeting, sections[1..8]{title∈enum, guidan
 Response (no AI): `{ source:'unavailable', sections:[], reason }`
 Rate limit 10/min/client. Body cap 16 kB. Prompt forbids contradicting the deterministic actions.
 
+`greeting` is capped at 160 characters. The live model routinely returns ~180, so the handler clamps it at
+a word boundary (`normalizeBrief`) rather than throwing away a brief whose sections are all valid. Section
+titles are **not** relaxed: an unknown title still rejects the whole brief, because a title outside the enum
+means the model invented a section type rather than merely overshooting a length.
+
 ### `GET /api/aqi`
 Response: `{ available, aqi|null, station|null, distanceKm|null, observedAt|null, provider, reason|null, pollutants[] }`
 where `pollutants[] = { id, label, value, min|null, max|null, unit }` (max 12).
@@ -255,6 +261,13 @@ Changing any of these shapes requires updating: the Zod schema in the handler, t
 
 - **`npm run dev` does not serve `/api/*`.** Vite has no serverless runtime. The client handles the 404 and
   shows an explicit unavailable state. Use `vercel dev` to exercise the API functions locally.
+- **Vercel's `nodejs` runtime calls handlers as `(req, res)` with Node objects.** The handlers are written
+  Fetch-style (`Request` in, `Response` out) so they can be unit-tested, so every `api/*.ts` default export
+  is wrapped in `withVercelRuntime()` from `api/lib/adapter.ts`. Without that wrapper the deployed function
+  throws `TypeError: request.headers.get is not a function`. Unit tests inject a real `Request`, so they pass
+  either way — the adapter is the only thing that catches this class of bug.
+- **Every file under `api/` becomes a serverless function.** `api/**/*.test.ts` must stay in `.vercelignore`
+  or the tests ship as public endpoints. Check the build output with `vercel inspect` if unsure.
 - **Open-Meteo timestamps have no offset.** See §5.1. This is the most common source of subtle bugs.
 - **CO units differ.** Open-Meteo µg/m³ → app mg/m³. Do not "fix" the division.
 - **Missing weather fields stay `null`.** `WeatherNow.humidityPct` and `windKmh` are `number | null` and render
@@ -265,7 +278,10 @@ Changing any of these shapes requires updating: the Zod schema in the handler, t
   database, no cross-user leakage).
 - **Rate limiting is per-instance.** Good enough for abuse damping, not a billing guarantee.
 - **`dist/` is generated.** Never edit it; it is gitignored.
-- The repo is **not a git repository**. Treat all files as uncommitted working state.
+- **Windows PowerShell 5.1 misreads BOM-less UTF-8.** Em dashes and smart quotes become string delimiters and
+  break parsing. Keep `scripts/*.ps1` pure ASCII.
+- **PowerShell strips quotes from inline JSON** passed to `curl.exe`, producing `400 INVALID_ARGUMENT` from
+  Gemini. Write the payload to a file and use `--data-binary "@file"`.
 
 ### Storage keys (client only)
 `vayu.profile.v1`, `vayu.location.v1`, `vayu.checklist.v1`, `vayu.onboarded.v1`.
@@ -291,7 +307,10 @@ every key and restores in-memory defaults.
 
 ## 11. Deployment
 
-Target: Vercel (static Vite build + serverless functions).
+Live: **https://vayu-wheat.vercel.app** (Vercel project `prashant-singhs-projects-4b5930a2/vayu`, region `iad1`).
+
+The project is linked to GitHub `PrashantDevX/Vayu_Hack2Skill`, so **every push to `main` deploys to
+production automatically** and every other branch produces a preview deployment.
 
 1. Import the repo, framework preset Vite. Build command `npm run build`, output `dist`.
 2. Set environment variables (all optional — the app degrades honestly without them):
@@ -305,7 +324,17 @@ Target: Vercel (static Vite build + serverless functions).
 
 3. `vercel.json` supplies SPA rewrites and security headers (CSP, HSTS, `X-Frame-Options: DENY`,
    `nosniff`, referrer policy, permissions policy). If you add a provider domain, add it to `connect-src`.
-4. Verify `/api/health` reports the expected configuration flags.
+4. `.vercelignore` keeps `api/**/*.test.ts`, `coverage/`, `docs/` and `scripts/` out of the upload, so test
+   files are never published as serverless endpoints.
+5. **Deployment protection must stay off** for a public demo. New projects can default to
+   `ssoProtection.deploymentType = 'all_except_custom_domains'`, which makes every `*.vercel.app` URL
+   redirect to a Vercel login. Clear it with
+   `PATCH https://api.vercel.com/v9/projects/{projectId}?teamId={orgId}` and body
+   `{"ssoProtection": null}`.
+6. Verify `/api/health` reports the expected configuration flags.
+
+`npm run check:providers` validates the upstream credentials, but it does not exercise the deployed
+functions. Always smoke-test `/api/health`, `/api/aqi`, and one `POST /api/chat` after a deploy.
 
 ---
 
@@ -315,7 +344,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 114 tests / 20 files)
+- [ ] `npm test` green (currently 125 tests / 21 files)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links

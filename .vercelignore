@@ -1,0 +1,17 @@
+# Vercel upload exclusions.
+#
+# Every file under api/ becomes a serverless function, so test files must be
+# excluded or they are deployed as publicly reachable endpoints.
+api/**/*.test.ts
+
+# Development tooling and generated output. None of this is needed at runtime;
+# `dist/` is produced by the Vercel build, not uploaded.
+coverage
+dist
+scripts
+docs
+
+# Local-only artefacts
+*.log
+.env
+.env.local

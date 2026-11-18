@@ -112,6 +112,35 @@ describe('POST /api/plan', () => {
     expect(call.config.maxOutputTokens).toBe(900)
   })
 
+  it('clamps an over-long greeting instead of discarding a valid brief', async () => {
+    process.env.GEMINI_API_KEY = 'test-key'
+    // The live model routinely returns ~180 characters here, which used to fail
+    // validation and throw away eight otherwise-valid sections.
+    const longGreeting =
+      'Namaste. As your environmental-health planner, I have tailored these practical steps for your household in New Delhi given the current poor air quality and the sensitivity of the people who live with you today.'
+    expect(longGreeting.length).toBeGreaterThan(160)
+
+    generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        greeting: longGreeting,
+        sections: [
+          { title: 'Morning routine', guidance: 'Ventilate only during the cleaner window, then close up.' },
+        ],
+        sources: ['CPCB'],
+      }),
+    })
+
+    const data = (await (await handler(request({}, '10.1.0.10'))).json()) as {
+      source: string
+      greeting: string
+      sections: unknown[]
+    }
+    expect(data.source).toBe('gemini')
+    expect(data.sections).toHaveLength(1)
+    expect(data.greeting.length).toBeLessThanOrEqual(160)
+    expect(data.greeting.endsWith(' ')).toBe(false)
+  })
+
   it('rejects invented section titles and falls back without exposing provider details', async () => {
     process.env.GEMINI_API_KEY = 'test-key'
 

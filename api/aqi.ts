@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { withVercelRuntime } from './lib/adapter.js'
 import { checkRateLimit, clientKey } from './lib/rateLimit.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 15 }
@@ -292,7 +293,7 @@ async function fetchOfficial(city: string, resourceId: string, apiKey: string): 
   }
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   const limit = checkRateLimit(`aqi:${clientKey(req)}`, 60)
   if (!limit.allowed) {
     return Response.json(
@@ -333,3 +334,5 @@ export default async function handler(req: Request): Promise<Response> {
     headers: { 'Cache-Control': result.available ? 'public, s-maxage=600, stale-while-revalidate=300' : 'no-store' },
   })
 }
+
+export default withVercelRuntime(handler)
