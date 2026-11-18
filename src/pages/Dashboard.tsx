@@ -4,9 +4,12 @@ import {
   ArrowRight,
   Bike,
   Check,
+  CheckCircle2,
+  Clock3,
   CloudSun,
   Info,
   Leaf,
+  MapPin,
   RefreshCw,
   ShieldCheck,
   Sun,
@@ -16,7 +19,6 @@ import {
 import { useApp } from '../context/AppContext'
 import { AqiBadge } from '../components/AqiBadge'
 import { ProvenanceNote } from '../components/DataProvenance'
-import { CATEGORY_SUMMARY } from '../constants/aqi'
 import { greetingForHour } from '../utils/date'
 import { dominantPollutant, formatPollutantValue } from '../utils/aqi'
 
@@ -43,13 +45,13 @@ function ChecklistItem({ id }: { id: string }) {
 }
 
 export default function Dashboard() {
-  const { air, planner, location, profile, refresh } = useApp()
+  const { air, planner, location, profile, checklist, refresh } = useApp()
   const [now] = useState(() => new Date())
   const assessment = air.data?.model.assessment
-  const official = air.data?.official
   const weather = air.data?.weather
   const dominant = assessment ? dominantPollutant(assessment) : null
   const topActions = ['morning-windows', 'commute-lower-exposure', 'indoor-source-control']
+  const completedActions = topActions.filter(id => checklist.includes(id)).length
 
   return (
     <div className="page">
@@ -84,22 +86,41 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className={`status-banner ${assessment?.aqi && assessment.aqi > 200 ? 'warning' : ''}`}>
-            <div className="status-icon">
-              <ShieldCheck size={22} aria-hidden="true" />
+          <section className="dashboard-focus" aria-label="Today's priority summary">
+            <div className="dashboard-focus-main">
+              <span className="focus-icon"><ShieldCheck size={22} aria-hidden="true" /></span>
+              <div>
+                <small>TODAY&apos;S PRIORITY</small>
+                <h2>
+                  {assessment?.aqi === null || assessment?.aqi === undefined
+                    ? 'Reduce unnecessary exposure until provider data is confirmed'
+                    : assessment.aqi > 200
+                      ? 'Keep essential outdoor time short'
+                      : 'Keep the day flexible and plan around the forecast'}
+                </h2>
+                <p>
+                  <MapPin size={13} aria-hidden="true" /> {location.city}
+                  <span aria-hidden="true">·</span>
+                  {assessment?.category ?? 'Coverage insufficient'}
+                </p>
+              </div>
+              <Link className="focus-action" to="/planner">Open today&apos;s plan <ArrowRight size={15} aria-hidden="true" /></Link>
             </div>
-            <div>
-              <strong>{assessment?.category ? CATEGORY_SUMMARY[assessment.category] : 'AQI cannot be shown from the available pollutant coverage.'}</strong>
-              <p>
-                {assessment?.aqi === null || assessment?.aqi === undefined
-                  ? assessment?.reason ?? 'No overall index is inferred when the provider data is incomplete.'
-                  : planner.bestWindow
-                    ? `Relatively cleaner forecast window: ${planner.bestWindow.start}–${planner.bestWindow.end} (estimated AQI ${planner.bestWindow.averageAqi ?? 'unavailable'}).`
-                    : 'No reliable hourly comparison window is available yet.'}
-              </p>
+            <div className="dashboard-focus-stats">
+              <div>
+                <span className="focus-stat-icon"><Wind size={16} aria-hidden="true" /></span>
+                <span><small>ESTIMATED AQI</small><strong>{assessment?.aqi ?? 'Unavailable'}</strong></span>
+              </div>
+              <div>
+                <span className="focus-stat-icon"><Clock3 size={16} aria-hidden="true" /></span>
+                <span><small>CLEANER WINDOW</small><strong>{planner.bestWindow ? planner.bestWindow.start : 'Unavailable'}</strong></span>
+              </div>
+              <div>
+                <span className="focus-stat-icon"><CheckCircle2 size={16} aria-hidden="true" /></span>
+                <span><small>TODAY&apos;S ACTIONS</small><strong>{completedActions} / {topActions.length}</strong></span>
+              </div>
             </div>
-            <span className="status-source">{official?.available ? 'Official data available' : 'Model estimate only'}</span>
-          </div>
+          </section>
 
           <div className="overview-grid">
             <section className="aqi-card" aria-labelledby="dashboard-aqi">
