@@ -34,6 +34,10 @@ const responseSchema = z.object({
   sources: z.array(z.string().max(300)).max(5).default([]),
 })
 
+// A schema-valid answer can still violate a safety rule. Reject actionable
+// DIY electrical filtration advice before returning model text to the client.
+const unsafeDiyFiltrationPattern = /(?:\bDIY\b.{0,80}\b(?:box\s*fan|filter|electrical)\b|\b(?:box[- ]fan|MERV)\b.{0,80}\b(?:filter|tape|attach|build|make)\b|\b(?:window|cotton)\s+mesh\s+screens?\b)/i
+
 type ChatBody = z.infer<typeof requestSchema>
 
 function fallback(body: ChatBody): { answer: string; sources: string[] } {
@@ -136,7 +140,7 @@ ${parsed.data.message}
     if (!text) return Response.json(fallbackResponse, { headers: { 'Cache-Control': 'no-store' } })
 
     const validated = responseSchema.safeParse(extractJson(text))
-    if (!validated.success) {
+    if (!validated.success || unsafeDiyFiltrationPattern.test(validated.data.answer)) {
       return Response.json(fallbackResponse, { headers: { 'Cache-Control': 'no-store' } })
     }
 

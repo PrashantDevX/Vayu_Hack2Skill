@@ -73,6 +73,41 @@ describe('POST /api/plan', () => {
     expect((await handler(malformed)).status).toBe(400)
   })
 
+  it('rejects oversized requests before parsing and accepts a fenced JSON object', async () => {
+    const oversized = new Request('https://vayu.test/api/plan', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-length': '16001', 'x-forwarded-for': '10.1.0.40' },
+      body: '{}',
+    })
+    expect((await handler(oversized)).status).toBe(413)
+
+    process.env.GEMINI_API_KEY = 'test-key'
+    generateContent.mockResolvedValue({
+      text: `Here is the brief: ${JSON.stringify({
+        sections: [{ title: 'Indoor environment', guidance: 'Use the exhaust fan while cooking to reduce indoor sources.' }],
+      })} Thank you.`,
+    })
+    const response = await handler(request({}, '10.1.0.41'))
+    const result = (await response.json()) as { source: string; greeting: string | null; sections: unknown[]; sources: string[] }
+    expect(result.source).toBe('gemini')
+    expect(result.greeting).toBeNull()
+    expect(result.sections).toHaveLength(1)
+    expect(result.sources).toEqual([])
+  })
+
+  it('rejects malformed embedded JSON and schema-invalid optional sections', async () => {
+    process.env.GEMINI_API_KEY = 'test-key'
+    generateContent.mockResolvedValue({ text: 'prefix {not-json} suffix' })
+    const malformed = (await (await handler(request({}, '10.1.0.42'))).json()) as { source: string; reason: string }
+    expect(malformed.source).toBe('unavailable')
+    expect(malformed.reason).toContain('invalid brief')
+
+    generateContent.mockResolvedValue({ text: JSON.stringify({ sections: [] }) })
+    const emptySections = (await (await handler(request({}, '10.1.0.43'))).json()) as { source: string; reason: string }
+    expect(emptySections.source).toBe('unavailable')
+    expect(emptySections.reason).toContain('invalid brief')
+  })
+
   it('rate limits plan generation', async () => {
     let status = 200
     for (let index = 0; index < 11; index += 1) {

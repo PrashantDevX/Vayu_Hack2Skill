@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatHourLabel, formatRelativeTime, greetingForHour, localDateKey } from './date'
+import { formatHourLabel, formatObservedAt, formatRelativeTime, greetingForHour, localDateKey } from './date'
 
 describe('relative time', () => {
   const now = new Date('2026-11-18T12:00:00.000Z').getTime()
@@ -14,6 +14,12 @@ describe('relative time', () => {
   it('handles missing or invalid timestamps', () => {
     expect(formatRelativeTime(null, now)).toBe('Unknown')
     expect(formatRelativeTime('not-a-date', now)).toBe('Unknown')
+  })
+
+  it('keeps future observations at just now and reports timestamp display fallbacks', () => {
+    expect(formatRelativeTime(new Date(now + 60_000).toISOString(), now)).toBe('Just now')
+    expect(formatObservedAt(null)).toBe('Timestamp unavailable')
+    expect(formatObservedAt('invalid timestamp')).toBe('invalid timestamp')
   })
 })
 
@@ -33,5 +39,7 @@ describe('local time handling', () => {
     expect(greetingForHour(8)).toBe('Good morning')
     expect(greetingForHour(14)).toBe('Good afternoon')
     expect(greetingForHour(20)).toBe('Good evening')
+    expect(greetingForHour(0)).toBe('Good morning')
+    expect(greetingForHour(16)).toBe('Good afternoon')
   })
 })

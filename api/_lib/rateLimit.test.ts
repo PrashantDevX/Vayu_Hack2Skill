@@ -26,4 +26,12 @@ describe('in-memory rate limit', () => {
     expect(clientKey(new Request('https://example.test', { headers: { 'x-real-ip': '9.9.9.9' } }))).toBe('9.9.9.9')
     expect(clientKey(new Request('https://example.test'))).toBe('unknown')
   })
+
+  it('evicts expired buckets after the map grows beyond its safety threshold', () => {
+    for (let index = 0; index < 2_001; index += 1) {
+      expect(checkRateLimit(`expired-${index}`, 1, 1, 0).allowed).toBe(true)
+    }
+    expect(checkRateLimit('trigger-cleanup', 1, 1, 2).allowed).toBe(true)
+    expect(checkRateLimit('fresh-client', 1, 1, 2).remaining).toBe(0)
+  })
 })

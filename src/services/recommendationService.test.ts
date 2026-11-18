@@ -115,6 +115,61 @@ describe('personalized planner', () => {
     expect(evening?.action.toLowerCase()).toContain('keep windows closed')
   })
 
+  it('tailors filtration, commute and combustion guidance to saved preferences', () => {
+    const tailored = buildPlanner({
+      assessment: assessAqi({ ...baseValues, pm25: 400 }),
+      hourly: hourly([150, 240, 350]),
+      profile: {
+        ...DEFAULT_PROFILE,
+        hasPurifier: true,
+        commute: 'Petrol car',
+        cookingFuel: 'Biomass or wood',
+      },
+    })
+    expect(tailored.recommendations.find(item => item.id === 'filtration')?.action).toContain('rated CADR')
+    expect(tailored.recommendations.find(item => item.id === 'commute-lower-exposure')?.action).toContain('Replace solo petrol car trips')
+    expect(tailored.recommendations.find(item => item.id === 'indoor-source-control')?.action).toContain('every time you cook')
+    expect(tailored.recommendations.find(item => item.id === 'outdoor-activity')?.action).toContain('Avoid strenuous outdoor exercise')
+  })
+
+  it('selects budget-sensitive purifier advice and alternative commute guidance', () => {
+    const freeBudget = buildPlanner({
+      assessment,
+      hourly: [],
+      profile: { ...DEFAULT_PROFILE, budget: 'Free', commute: 'Carpool' },
+    })
+    expect(freeBudget.recommendations.find(item => item.id === 'filtration')?.action).toContain('Prioritise source control')
+    expect(freeBudget.recommendations.find(item => item.id === 'commute-lower-exposure')?.action).toContain('Keep the carpool full')
+    expect(freeBudget.recommendations.find(item => item.id === 'morning-windows')?.suggestedTime).toBe('Until the next cleaner window')
+
+    const premiumWalking = buildPlanner({
+      assessment,
+      hourly: hourly([80, 120]),
+      profile: { ...DEFAULT_PROFILE, budget: 'Premium solutions', commute: 'Walking or cycling' },
+    })
+    expect(premiumWalking.recommendations.find(item => item.id === 'filtration')?.action).toContain('certified HEPA unit')
+    expect(premiumWalking.recommendations.find(item => item.id === 'commute-lower-exposure')?.action).toContain('quieter side streets')
+  })
+
+  it('uses severity-aware advice for children, older adults and outdoor workers', () => {
+    const vulnerable = buildPlanner({
+      assessment: assessAqi({ ...baseValues, pm25: 400 }),
+      hourly: hourly([330, 350, 320]),
+      profile: { ...DEFAULT_PROFILE, children: 1, elderly: 1, outdoorWorker: true },
+    })
+    expect(vulnerable.recommendations.find(item => item.id === 'school-protection')?.action).toContain('Keep outdoor school travel short')
+    expect(vulnerable.recommendations.find(item => item.id === 'elderly-precautions')?.action).toContain('Move errands and walks')
+    expect(vulnerable.recommendations.find(item => item.id === 'outdoor-worker')?.action).toContain('Shift strenuous tasks')
+
+    const clear = buildPlanner({
+      assessment: assessAqi({ ...baseValues, pm25: 15, pm10: 20, no2: 10 }),
+      hourly: hourly([35, 40]),
+      profile: { ...DEFAULT_PROFILE, children: 1, elderly: 1, outdoorWorker: true },
+    })
+    expect(clear.recommendations.find(item => item.id === 'elderly-precautions')?.action).toContain('Normal activity is reasonable')
+    expect(clear.recommendations.find(item => item.id === 'outdoor-worker')?.action).toContain('Use the cleaner window')
+  })
+
   it('does not invent an AQI when coverage is insufficient', () => {
     const empty = assessAqi({ pm25: null, pm10: null, no2: null, so2: null, co: null, o3: null, nh3: null })
     const plan = buildPlanner({ assessment: empty, hourly: [], profile: DEFAULT_PROFILE })

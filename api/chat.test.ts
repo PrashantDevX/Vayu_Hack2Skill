@@ -134,4 +134,20 @@ describe('POST /api/chat', () => {
     const failed = (await (await handler(request(validBody, { ip: '10.0.0.12' }))).json()) as { answer: string }
     expect(failed.answer).toContain('180')
   })
+
+  it('rejects unsafe DIY filtration suggestions even when the JSON shape is valid', async () => {
+    process.env.GEMINI_API_KEY = 'test-key'
+    generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        answer: 'Build a DIY box-fan filter with a MERV-rated filter taped to the fan for indoor air cleaning.',
+        sources: ['model data'],
+      }),
+    })
+
+    const response = await handler(request(validBody, { ip: '10.0.0.30' }))
+    const result = (await response.json()) as { answer: string; sources: string[] }
+    expect(result.answer).toContain('general public-health guidance')
+    expect(result.answer).not.toContain('box-fan')
+    expect(result.sources).toContain('CPCB AQI methodology')
+  })
 })
