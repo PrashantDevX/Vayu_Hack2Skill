@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { GoogleGenAI } from '@google/genai'
 import { withVercelRuntime } from './_lib/adapter.js'
+import { callGemini } from './_lib/gemini.js'
 import { checkRateLimit, clientKey } from './_lib/rateLimit.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 25 }
@@ -64,22 +65,6 @@ function extractJson(text: string): unknown {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('AI request timed out')), ms)
-    promise.then(
-      value => {
-        clearTimeout(timeout)
-        resolve(value)
-      },
-      error => {
-        clearTimeout(timeout)
-        reject(error)
-      },
-    )
-  })
-}
-
 async function handler(req: Request): Promise<Response> {
   const limit = checkRateLimit(`chat:${clientKey(req)}`, 20)
   if (!limit.allowed) {
@@ -139,13 +124,12 @@ User question starts after the marker:
 ${parsed.data.message}
 </user_question>`
 
-    const result = await withTimeout(
+    const result = await callGemini(() =>
       ai.models.generateContent({
         model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
         contents: prompt,
         config: { responseMimeType: 'application/json', maxOutputTokens: 700, temperature: 0.2 },
       }),
-      18_000,
     )
 
     const text = result.text?.trim()

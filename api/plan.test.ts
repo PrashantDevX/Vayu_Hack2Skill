@@ -112,6 +112,31 @@ describe('POST /api/plan', () => {
     expect(call.config.maxOutputTokens).toBe(900)
   })
 
+  it('retries once when Gemini reports high demand and returns the second brief', async () => {
+    process.env.GEMINI_API_KEY = 'test-key'
+    // The live model answers 503 UNAVAILABLE intermittently; the first call is
+    // rejected, the retry succeeds, and the user still gets a real brief.
+    generateContent
+      .mockRejectedValueOnce(
+        new Error(JSON.stringify({ error: { code: 503, status: 'UNAVAILABLE', message: 'high demand' } })),
+      )
+      .mockResolvedValue({
+        text: JSON.stringify({
+          greeting: 'A short greeting.',
+          sections: [{ title: 'Commute', guidance: 'Take the metro to cut roadside exposure on the school run.' }],
+          sources: ['CPCB'],
+        }),
+      })
+
+    const data = (await (await handler(request({}, '10.1.0.20'))).json()) as {
+      source: string
+      sections: unknown[]
+    }
+    expect(data.source).toBe('gemini')
+    expect(data.sections).toHaveLength(1)
+    expect(generateContent).toHaveBeenCalledTimes(2)
+  })
+
   it('clamps an over-long greeting instead of discarding a valid brief', async () => {
     process.env.GEMINI_API_KEY = 'test-key'
     // The live model routinely returns ~180 characters here, which used to fail

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { GoogleGenAI } from '@google/genai'
 import { withVercelRuntime } from './_lib/adapter.js'
+import { callGemini } from './_lib/gemini.js'
 import { checkRateLimit, clientKey } from './_lib/rateLimit.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 25 }
@@ -113,21 +114,6 @@ function normalizeBrief(raw: unknown): unknown {
   return { ...draft, greeting: clampGreeting(draft.greeting) }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('AI request timed out')), ms)
-    promise.then(
-      value => {
-        clearTimeout(timeout)
-        resolve(value)
-      },
-      error => {
-        clearTimeout(timeout)
-        reject(error)
-      },
-    )
-  })
-}
-
 function buildPrompt(body: PlanBody): string {
   const actions = body.deterministicActions
     .map((item, index) => `${index + 1}. [${item.category}] ${item.title} — ${item.action} (${item.suggestedTime})`)
@@ -186,13 +172,12 @@ async function handler(req: Request): Promise<Response> {
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
-    const result = await withTimeout(
+    const result = await callGemini(() =>
       ai.models.generateContent({
         model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
         contents: buildPrompt(parsed.data),
         config: { responseMimeType: 'application/json', maxOutputTokens: 900, temperature: 0.25 },
       }),
-      18_000,
     )
 
     const text = result.text?.trim()
