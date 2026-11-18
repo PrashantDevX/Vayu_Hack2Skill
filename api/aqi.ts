@@ -289,7 +289,15 @@ async function fetchOfficial(city: string, resourceId: string, apiKey: string): 
   } catch (error) {
     // Server-side only. The client gets a generic reason so provider internals
     // and URLs are never exposed.
-    console.error('official provider request failed:', error instanceof Error ? error.message : error)
+    const cause =
+      error instanceof Error && error.cause instanceof Error
+        ? `${error.cause.message}${(error.cause as { code?: string }).code ? ` [${(error.cause as { code?: string }).code}]` : ''}`
+        : ''
+    console.error(
+      'official provider request failed:',
+      error instanceof Error ? error.message : error,
+      cause,
+    )
     return unavailable('The official provider is temporarily unavailable.')
   } finally {
     clearTimeout(timeout)
