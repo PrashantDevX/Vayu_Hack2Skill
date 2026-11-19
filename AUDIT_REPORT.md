@@ -1,5 +1,13 @@
 # Vayu independent baseline audit
 
+> **CORRECTION NOTICE (2026-11-19, superseded).** This document's claim that "no P0 blocker was verified"
+> was wrong. An independent read-only audit of `6003d38` proved that `/api/chat` and `/api/plan` returned
+> HTTP 500 on every request because of a link-time `ERR_MODULE_NOT_FOUND` on an extensionless import in
+> `src/services/chatFallback.ts`. The defect has since been fixed, and the counts below are superseded:
+> the suite is now 24 files / 189 tests at 94.88 / 86.36 / 97.61 / 98.23 coverage. See
+> `INDEPENDENT_AUDIT_REPORT.md`, `INDEPENDENT_TEST_RESULTS.md` and `PERFORMANCE_ACCESSIBILITY_REPORT.md`.
+> Treat this file as a historical record of an earlier sprint, not as current status.
+
 ## Third remediation sprint addendum (2026-11-19)
 
 **Score:** 87/100, unchanged from the previous internal assessment. Original preserved baseline: 86/100. The fixes below are verified locally, but no new score is awarded: post-fix live Gemini quality and deployment/browser behavior were not verified, and adding code/tests alone is not scoring evidence.
@@ -46,6 +54,10 @@ The repository is a real modular application, not a static mockup. It has live O
 At the time of the second sprint, branch coverage had reached 85.06% (712/837), and live checks passed against configured Gemini and data.gov.in, Open-Meteo data was confirmed, deployed API health/AQI/chat/plan were smoke-tested, and 20 live chat cases were run. The AI cases exposed one unsafe DIY filtration recommendation and several irrelevant/generic answers. A local response guard and regression test now reject the observed unsafe recommendation class. The deployment was not changed and does not contain this fix. Lighthouse, axe, deployed browser and geolocation-permission review remain unverified.
 
 No P0 blocker was verified. VAYU-TST-001 is resolved at 85.06% branch coverage. Remaining P1 evidence gap is external browser verification; the AI response guard is fixed locally but awaiting a separately authorized production release.
+
+> **Superseded (2026-11-19):** a later independent audit proved this statement wrong — a P0
+> (`ERR_MODULE_NOT_FOUND` taking down `/api/chat` and `/api/plan`) was real and has since been fixed.
+> See the correction notice at the top of this file.
 
 ## Weighted score
 

@@ -107,7 +107,9 @@ describe('application integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
     await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/chat', expect.any(Object)))
     expect(await screen.findByText(/estimated CPCB-style model AQI 200/)).toBeInTheDocument()
-    expect(screen.getByText('Deterministic guidance')).toBeInTheDocument()
+    // Every assistant fallback message carries the provenance label, including
+    // the seeded opening message — the badge is no longer suppressed for index 0.
+    expect(screen.getAllByText('Deterministic guidance').length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Open-Meteo CAMS model' })).toHaveAttribute('href', 'https://open-meteo.com/en/docs/air-quality-api')
 
     fireEvent.change(input, { target: { value: 'When should I walk?' } })

@@ -95,7 +95,7 @@ export default function AIAdvisor() {
                 {message.role === 'assistant' && <div className="bot-avatar"><Bot size={16} aria-hidden="true" /></div>}
                 <div className="message-body">
                   <p>{message.text}</p>
-                  {message.role === 'assistant' && message.source === 'fallback' && index > 0 && (
+                  {message.role === 'assistant' && message.source === 'fallback' && (
                     <small className="message-source">Deterministic guidance</small>
                   )}
                   {message.role === 'assistant' && message.source === 'gemini' && (

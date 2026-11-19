@@ -6,8 +6,8 @@ Run: 2026-11-19 (Asia/Calcutta). Latest Git `main` was clean and aligned with `o
 
 | Command | Result | Evidence |
 |---|---|---|
-| `npm test` | PASS | 24 files, 180 tests pass. |
-| `npm run test:coverage` | PASS | Statements 94.80% (986/1,040); branches 86.24% (790/916); functions 97.61% (164/168); lines 98.21% (826/841). |
+| `npm test` | PASS | 24 files, 189 tests pass. |
+| `npm run test:coverage` | PASS | Statements 94.88% (1001/1055); branches 86.36% (817/946); functions 97.61% (164/168); lines 98.23% (837/852). |
 | `npm run typecheck` | PASS | `tsc -b` exit 0. |
 | `npm run lint` | PASS | `oxlint` exit 0, zero warnings. |
 | `npm run build` | PASS | Production build succeeded; initial JS 407.70 kB / 127.16 kB gzip; AirQuality route chunk 443.30 kB / 124.24 kB gzip. |

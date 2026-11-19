@@ -22,6 +22,15 @@ import { ProvenanceNote } from '../components/DataProvenance'
 import { greetingForHour } from '../utils/date'
 import { dominantPollutant, formatPollutantValue } from '../utils/aqi'
 
+function priorityHeadline(aqi: number | null | undefined): string {
+  if (aqi === null || aqi === undefined) return 'Reduce unnecessary exposure until provider data is confirmed'
+  if (aqi > 400) return 'Stay indoors where you can and keep outdoor trips to essentials'
+  if (aqi > 300) return 'Avoid outdoor exertion and keep outdoor time very short'
+  if (aqi > 200) return 'Keep essential outdoor time short'
+  if (aqi > 100) return 'Plan outdoor activity around the cleaner forecast window'
+  return 'Conditions are relatively clean — a good day to be outdoors'
+}
+
 function ChecklistItem({ id }: { id: string }) {
   const { planner, checklist, toggleChecklistItem } = useApp()
   const item = planner.recommendations.find(recommendation => recommendation.id === id)
@@ -91,13 +100,7 @@ export default function Dashboard() {
               <span className="focus-icon"><ShieldCheck size={22} aria-hidden="true" /></span>
               <div>
                 <small>TODAY&apos;S PRIORITY</small>
-                <h2>
-                  {assessment?.aqi === null || assessment?.aqi === undefined
-                    ? 'Reduce unnecessary exposure until provider data is confirmed'
-                    : assessment.aqi > 200
-                      ? 'Keep essential outdoor time short'
-                      : 'Keep the day flexible and plan around the forecast'}
-                </h2>
+                <h2>{priorityHeadline(assessment?.aqi)}</h2>
                 <p>
                   <MapPin size={13} aria-hidden="true" /> {location.city}
                   <span aria-hidden="true">·</span>

@@ -53,6 +53,15 @@ describe('GET /api/aqi', () => {
     expect((await handler(request('Delhi', '10.2.0.4', 'POST'))).status).toBe(405)
   })
 
+  it('rejects a malformed city before calling the provider', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const response = await handler(request('<script>alert(1)</script>', '10.2.0.5'))
+    expect(response.status).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
   it('normalizes a usable official AQI record', async () => {
     process.env.DATA_GOV_IN_API_KEY = 'test-key'
     process.env.DATA_GOV_IN_RESOURCE_ID = 'test-resource'

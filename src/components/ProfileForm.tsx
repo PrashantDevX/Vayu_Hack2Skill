@@ -23,6 +23,11 @@ interface NumberFieldProps {
 
 function NumberField({ id, label, value, min, max, step, onChange }: NumberFieldProps) {
   const [text, setText] = useState(() => String(value))
+  const parsed = text.trim() === '' ? null : Number(text)
+  // Out-of-range input used to be dropped silently while the typed text stayed
+  // on screen, so the field looked accepted. Expose the invalid state instead.
+  const invalid = parsed !== null && (!Number.isFinite(parsed) || parsed < min || parsed > max)
+  const hintId = `${id}-hint`
 
   const commit = (nextText: string) => {
     setText(nextText)
@@ -44,11 +49,18 @@ function NumberField({ id, label, value, min, max, step, onChange }: NumberField
         max={max}
         step={step}
         value={text}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? hintId : undefined}
         onChange={event => commit(event.target.value)}
         onBlur={() => {
           if (text.trim() === '') setText(String(value))
         }}
       />
+      {invalid && (
+        <span id={hintId} className="field-hint error" role="alert">
+          Enter a value between {min} and {max}.
+        </span>
+      )}
     </label>
   )
 }

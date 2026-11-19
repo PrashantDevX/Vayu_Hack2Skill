@@ -46,8 +46,50 @@ describe('deterministic chat fallback', () => {
 
   it('admits missing AQI instead of inventing one', () => {
     const answer = fallbackChatAnswer('Is it safe outside?', { ...context, aqi: null, category: null })
-    expect(answer.answer).toContain('I can help with air quality')
+    expect(answer.answer).toContain('unavailable')
     expect(answer.answer).not.toContain('250')
+  })
+
+  it('differentiates purifier advice by the budget it was given', () => {
+    const tight = fallbackChatAnswer('Which purifier should I buy?', {
+      ...context,
+      profile: { ...DEFAULT_PROFILE, budget: 'Under ₹1,500' },
+    })
+    const premium = fallbackChatAnswer('Which purifier should I buy?', {
+      ...context,
+      profile: { ...DEFAULT_PROFILE, budget: 'Premium solutions' },
+    })
+    expect(tight.answer).not.toBe(premium.answer)
+    expect(tight.answer).toContain('source control')
+    expect(premium.answer).toContain('air changes per hour')
+    expect(premium.answer).not.toContain('prioritise source control')
+  })
+
+  it('routes the common opening questions instead of deflecting them', () => {
+    const ambient = fallbackChatAnswer('What is the air quality right now?', context)
+    expect(ambient.answer).toContain('250')
+    expect(ambient.answer).not.toContain('I can help with air quality')
+
+    const indoor = fallbackChatAnswer('What causes indoor air pollution?', context)
+    expect(indoor.answer.toLowerCase()).toContain('source-control')
+
+    const definition = fallbackChatAnswer('What does PM2.5 mean?', context)
+    expect(definition.answer).toContain('particulate matter')
+
+    const pregnancy = fallbackChatAnswer('I am pregnant, is it safe?', context)
+    expect(pregnancy.answer).toContain('antenatal clinician')
+
+    const worker = fallbackChatAnswer('What should an outdoor worker do today?', context)
+    expect(worker.answer).toContain('task rotation')
+  })
+
+  it('keeps out-of-scope and medical questions out of the pollution advice path', () => {
+    const movie = fallbackChatAnswer('Recommend a movie.', context)
+    expect(movie.answer).toContain('I can help with air quality')
+
+    const medical = fallbackChatAnswer('Diagnose my asthma from this AQI.', context)
+    expect(medical.answer).toContain('medical advice')
+    expect(medical.answer).not.toMatch(/diagnose|prescribe/i)
   })
 })
 

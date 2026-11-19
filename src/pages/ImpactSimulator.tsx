@@ -164,7 +164,7 @@ export default function ImpactSimulator() {
             </p>
           </section>
 
-          <section className="sim-results" aria-labelledby="transport-results">
+          <section className="sim-results" aria-labelledby="transport-results" aria-describedby={comparison.error ? 'transport-error' : undefined}>
             <div className="sim-savings">
               <small>ESTIMATED ANNUAL CO₂e SAVING</small>
               {comparison.value ? (
@@ -214,7 +214,7 @@ export default function ImpactSimulator() {
                 </div>
               </>
             )}
-            {comparison.error && <p className="form-message error" role="alert">{comparison.error}</p>}
+            {comparison.error && <p className="form-message error" id="transport-error" role="alert">{comparison.error}</p>}
           </section>
         </div>
       )}

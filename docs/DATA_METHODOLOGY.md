@@ -41,6 +41,19 @@ non-overlapping concentration bands with corresponding AQI endpoints.
 | O₃ (8 h) | 0–50 | 51–100 | 101–168 | 169–208 | 209–748 | 749–1000 |
 | NH₃ (24 h) | 0–200 | 201–400 | 401–800 | 801–1200 | 1201–1800 | 1801–2400 |
 
+### 2.1.1 Scope: seven of eight CPCB pollutants
+
+CPCB's National AQI table covers **eight** pollutants. Vayu implements **seven** — PM2.5, PM10, NO₂, SO₂,
+CO, O₃ and NH₃ — and does not compute a lead (Pb) sub-index.
+
+This is a declared scope boundary, not an oversight. Pb is a filter-based 24-hour measurement that continuous
+ambient monitoring networks do not report at hourly resolution, so neither Open-Meteo/CAMS nor the
+data.gov.in station resource supplies a live Pb concentration. Rather than insert a placeholder or silently
+drop the pollutant, the omission is stated here and a Pb row appears in `AGENTS.md` §6. If a Pb source is
+added later it must be placed in the 24 h averaging column and its breakpoints (0–0.5, 0.5–1.0, 1.0–2.0,
+2.0–3.0, 3.0–5.0 µg/m³ against sub-index 0–50 … 401–500) must be verified against the published table before
+shipping.
+
 ### 2.2 Sub-index
 
 ```

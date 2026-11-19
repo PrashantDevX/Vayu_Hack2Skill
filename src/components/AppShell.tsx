@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   Bot,
   Home,
@@ -35,6 +35,13 @@ export function AppShell() {
   const { location, setLocation, air, profile, onboarded } = useApp()
   const [menuOpen, setMenuOpen] = useState(false)
   const [locationOpen, setLocationOpen] = useState(false)
+  const { pathname } = useLocation()
+
+  // `NavLink` only exposes its active state through `className`, so the current
+  // page was conveyed by colour alone. Assistive technology needs
+  // `aria-current="page"`, which requires knowing the active route directly.
+  const isCurrent = (to: string, end?: boolean) =>
+    end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`)
 
   const assessment = air.data?.model.assessment
   const statusLabel = air.loading
@@ -48,7 +55,7 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <aside className={`sidebar ${menuOpen ? 'open' : ''}`} aria-label="Sidebar">
+      <aside id="primary-sidebar" className={`sidebar ${menuOpen ? 'open' : ''}`} aria-label="Sidebar">
         <div className="brand">
           <div className="brand-mark"><Leaf size={22} aria-hidden="true" /></div>
           <span>Vayu</span>
@@ -59,25 +66,33 @@ export function AppShell() {
         <p className="brand-tagline">Urban air intelligence</p>
 
         <nav aria-label="Primary navigation">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              onClick={() => setMenuOpen(false)}
-            >
-              <Icon size={19} aria-hidden="true" />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => {
+            const active = isCurrent(to, end)
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={active ? 'active' : ''}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon size={19} aria-hidden="true" />
+                <span>{label}</span>
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="sidebar-bottom">
-          <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')} onClick={() => setMenuOpen(false)}>
+          <Link
+            to="/settings"
+            className={isCurrent('/settings') ? 'active' : ''}
+            aria-current={isCurrent('/settings') ? 'page' : undefined}
+            onClick={() => setMenuOpen(false)}
+          >
             <Settings size={19} aria-hidden="true" />
             <span>Settings &amp; privacy</span>
-          </NavLink>
+          </Link>
           <div className="user-chip">
             <div aria-hidden="true"><Users size={16} /></div>
             <span>
@@ -92,7 +107,14 @@ export function AppShell() {
 
       <main id="main-content">
         <header className="topbar">
-          <button type="button" className="menu-button" aria-label="Open navigation" onClick={() => setMenuOpen(true)}>
+          <button
+            type="button"
+            className="menu-button"
+            aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={menuOpen}
+            aria-controls="primary-sidebar"
+            onClick={() => setMenuOpen(true)}
+          >
             <Menu size={20} />
           </button>
           <button type="button" className="location-control" onClick={() => setLocationOpen(true)}>

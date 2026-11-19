@@ -63,10 +63,11 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 22 files | 135 tests pass |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | ≥90% stmts, ≥78% branches, ≥92% fns, ≥93% lines |
-| `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~404 kB / ~126 kB gzip |
+| `npm test` | Vitest, 24 files | 189 tests pass |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 94.88 / 86.36 / 97.61 / 98.23 (stmts/branch/fns/lines) |
+| `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~408 kB / ~127 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
+| `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
 | `vercel dev` | Local Vercel runtime | `/api/chat`, `/api/plan`, `/api/aqi`, `/api/health` work |
 | `npm run check:providers` | Probes Gemini and data.gov.in with the `.env` credentials (never prints a key) | PASS per configured provider; `SKIP` when unset. Not a substitute for `vercel dev` |
 
@@ -208,6 +209,7 @@ air.data.model.assessment + hourly + profile
 | CO | mg/m³ | 8 h | 0, 1, 2, 10, 17, 34, 50 | same |
 | O₃ | µg/m³ | 8 h | 0, 50, 100, 168, 208, 748, 1000 | same |
 | NH₃ | µg/m³ | 24 h | 0, 200, 400, 800, 1200, 1800, 2400 | same |
+| Pb | — | — | **not modelled** | Declared out of scope: a filter-based 24 h measurement that CAAQMS networks do not report continuously. The app implements 7 of CPCB's 8 pollutants and says so in `docs/DATA_METHODOLOGY.md`. |
 
 Sub-index = linear interpolation inside the bracket, rounded to an integer.
 Overall AQI = `max(valid sub-indices)`, capped at 500. Coverage: ≥3 valid pollutants **and** at least one of
@@ -277,6 +279,14 @@ Changing any of these shapes requires updating: the Zod schema in the handler, t
   therefore live in `api/_lib/`, and `api/**/*.test.ts` is excluded via `.vercelignore`, so neither is
   published as an endpoint. Confirm with `vercel inspect <deployment-url>`: only `api/aqi`, `api/chat`,
   `api/plan` and `api/health` should be listed.
+- **Every `src/` import reached from `api/` must carry an explicit `.js` extension.** This is not style. The
+  Vercel functions run on Node's ESM loader, which does not resolve extensionless specifiers, so
+  `from '../constants/sources'` crashes the function at link time with `ERR_MODULE_NOT_FOUND` *before any
+  handler code runs* — every method returns 500, including `GET`. Vite and Vitest both resolve it happily,
+  so the unit suite stays green. This exact bug took `/api/chat` and `/api/plan` down in `6003d38`; it is
+  why `npm run smoke` exists. `import type` is erased at build time and is safe either way.
+- **`npm run smoke` is the only test that exercises the deployed module graph.** Unit tests import handlers
+  in-process, so they cannot detect a link-time failure. Run it after every deploy.
 - **Open-Meteo timestamps have no offset.** See §5.1. This is the most common source of subtle bugs.
 - **CO units differ.** Open-Meteo µg/m³ → app mg/m³. Do not "fix" the division.
 - **Missing weather fields stay `null`.** `WeatherNow.humidityPct` and `windKmh` are `number | null` and render
@@ -285,7 +295,18 @@ Changing any of these shapes requires updating: the Zod schema in the handler, t
   exact GPS is never retained. Do not store raw `position.coords`.
 - **Cache is in-memory and per-process.** Serverless instances do not share it. That is intentional (no
   database, no cross-user leakage).
-- **Rate limiting is per-instance.** Good enough for abuse damping, not a billing guarantee.
+- **Rate limiting is per-instance.** Good enough for abuse damping, not a billing guarantee. The shared
+  Upstash path in `api/_lib/rateLimit.ts` is implemented but no `UPSTASH_*` variables are configured in
+  production, so `checkSharedRateLimit()` returns `null` and the in-process `Map` is the only limiter. The
+  documented 20/min is therefore per lambda instance, not global. Do not describe it as global.
+- **Lead (Pb) is not modelled.** CPCB's AQI table covers eight pollutants; this app implements seven
+  (PM2.5, PM10, NO₂, SO₂, CO, O₃, NH₃). Pb is a filter-based 24 h measurement that CAAQMS networks do not
+  report continuously, so it is declared out of scope rather than silently dropped. See
+  `docs/DATA_METHODOLOGY.md`.
+- **The Vercel project Node version is `26.x`, which local CLI 56 rejects.** `vercel build` and `vercel dev`
+  therefore fail locally on this host ("invalid or discontinued Node.js Version"); the build machine uses
+  CLI 65 and builds fine. `vercel dev` additionally crashes with a libuv assertion on Windows. Use the
+  production logs (`vercel logs --status-code 500 --json`) to diagnose runtime faults instead.
 - **Gemini returns `503 UNAVAILABLE` intermittently.** It is upstream capacity, not a bug in the prompt. Both
   endpoints retry once via `callGemini()`; do not remove that retry to "simplify" the handler, or the demo
   will show the fallback card at random. Do not add retries for `400`/`403` — those are configuration faults.

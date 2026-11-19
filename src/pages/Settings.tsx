@@ -100,7 +100,7 @@ export default function Settings() {
         </section>
       </div>
 
-      <section className="settings-card" aria-labelledby="profile-settings">
+      <section className="settings-card" aria-labelledby="profile-settings" aria-describedby={error ? 'settings-profile-error' : undefined}>
         <div className="card-heading">
           <div>
             <small>HOUSEHOLD PROFILE</small>
@@ -111,7 +111,7 @@ export default function Settings() {
           </button>
         </div>
         <ProfileForm value={draft} onChange={setDraft} idPrefix="settings" />
-        {error && <p className="form-message error" role="alert">{error}</p>}
+        {error && <p className="form-message error" id="settings-profile-error" role="alert">{error}</p>}
         <div className="profile-actions">
           <button type="button" className="secondary-button" onClick={() => setDraft(profile)}>Discard changes</button>
           <button type="button" className="primary-button" onClick={save}>{saved ? 'Saved' : 'Save profile'}</button>

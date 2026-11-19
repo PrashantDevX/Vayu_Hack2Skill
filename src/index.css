@@ -92,6 +92,9 @@ button:disabled { opacity:.6; cursor:not-allowed; }
 .dialog-copy { font-size:11px; color:#748078; line-height:1.6; margin:0 0 12px; }
 .form-message { font-size:11px; color:#77651f; background:#f7f0d7; border:1px solid #e9dfb9; border-radius:7px; padding:8px 10px; margin:10px 0; }
 .form-message.error { color:#8f3f3f; background:#f8e8e6; border-color:#ebcec9; }
+.field-hint { display:block; font-size:10px; line-height:1.4; margin-top:4px; }
+.field-hint.error { color:#8f3f3f; }
+.form-grid input[aria-invalid="true"] { border-color:#c98077; background:#fff7f6; }
 .danger { color:#8f3f3f!important; border-color:#e3c5c0!important; }
 .primary-button.danger { background:#8f3f3f; color:#fff!important; }
 .confirm-actions { display:flex; gap:8px; }

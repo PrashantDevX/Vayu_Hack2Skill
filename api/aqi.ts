@@ -8,6 +8,15 @@ const providerSchema = z.object({
   records: z.array(z.record(z.string(), z.unknown())).optional(),
 })
 
+/**
+ * The city name is forwarded to an upstream provider, so it is validated with
+ * the same rule `/api/chat` uses rather than trimmed and passed through. Without
+ * this, an arbitrary string (e.g. `<script>`) triggers a real provider request
+ * and caches the failure for three minutes.
+ */
+const citySchema = z.string().trim().min(1).max(80)
+  .regex(/^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .,'()-]*$/u)
+
 export interface OfficialPollutant {
   /** Canonical key: PM25, PM10, NO2, SO2, CO, O3, NH3. */
   id: string
@@ -317,8 +326,11 @@ async function handler(req: Request): Promise<Response> {
     return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'GET' } })
   }
 
-  const city = new URL(req.url).searchParams.get('city')?.trim().slice(0, 80)
-  if (!city) return Response.json(unavailable('A city is required.'), { status: 400 })
+  const parsedCity = citySchema.safeParse(new URL(req.url).searchParams.get('city') ?? '')
+  if (!parsedCity.success) {
+    return Response.json(unavailable('A valid city name is required.'), { status: 400 })
+  }
+  const city = parsedCity.data
 
   const cached = cache.get(city)
   if (cached && cached.expiresAt > Date.now()) {
