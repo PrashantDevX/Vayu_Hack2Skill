@@ -63,9 +63,9 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 24 files | 195 tests pass |
+| `npm test` | Vitest, 25 files | 200 tests pass |
 | `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 94.78 / 86.17 / 97.67 / 98.03 (stmts/branch/fns/lines) |
-| `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~408 kB / ~127 kB gzip |
+| `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
 | `vercel dev` | Local Vercel runtime | `/api/chat`, `/api/plan`, `/api/aqi`, `/api/health` work |
@@ -107,8 +107,8 @@ src/
   hooks/useAirQuality.ts      fetch lifecycle, auto-refresh, stale handling, request de-duplication
   hooks/useLocalStorage.ts    validated localStorage-backed state
   context/AppContext.tsx      profile, location, air, planner, checklist, reset/privacy actions
-  components/                 AppShell, Modal, AqiBadge, DataProvenance, LocationSearch/Dialog,
-                              ProfileForm, OnboardingDialog, ErrorBoundary
+  components/                 AppShell, Modal, AqiBadge, DataProvenance, DayTimeline,
+                              LocationSearch/Dialog, ProfileForm, OnboardingDialog, ErrorBoundary
   pages/                      Dashboard, AirQuality, DailyPlanner, IndoorAir, ImpactSimulator,
                               FamilyProtection, AIAdvisor, Settings, NotFound
   test/setup.ts               jsdom setup: dialog polyfill, scrollTo stub, storage cleanup
@@ -404,7 +404,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 195 tests / 24 files)
+- [ ] `npm test` green (currently 200 tests / 25 files)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links

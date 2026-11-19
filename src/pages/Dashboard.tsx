@@ -4,8 +4,6 @@ import {
   ArrowRight,
   Bike,
   Check,
-  CheckCircle2,
-  Clock3,
   CloudSun,
   Info,
   Leaf,
@@ -18,7 +16,9 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { AqiBadge } from '../components/AqiBadge'
+import { DayTimeline } from '../components/DayTimeline'
 import { ProvenanceNote } from '../components/DataProvenance'
+import { CATEGORY_CLASS } from '../constants/aqi'
 import { greetingForHour } from '../utils/date'
 import { dominantPollutant, formatPollutantValue } from '../utils/aqi'
 
@@ -29,6 +29,22 @@ function priorityHeadline(aqi: number | null | undefined): string {
   if (aqi > 200) return 'Keep essential outdoor time short'
   if (aqi > 100) return 'Plan outdoor activity around the cleaner forecast window'
   return 'Conditions are relatively clean — a good day to be outdoors'
+}
+
+/**
+ * One sentence that explains the headline using only values the app actually
+ * holds. No number is invented: with no assessment the sentence says so.
+ */
+function priorityReason(
+  aqi: number | null | undefined,
+  category: string | null | undefined,
+  bestWindow: { start: string; end: string } | null,
+): string {
+  if (aqi === null || aqi === undefined) {
+    return 'The live model feed is not returning a usable reading, so Vayu is not showing a number. The guidance below stays generic until data returns.'
+  }
+  const window = bestWindow ? ` Air is forecast to be lowest between ${bestWindow.start} and ${bestWindow.end}.` : ''
+  return `Estimated AQI ${aqi}${category ? ` (${category})` : ''}.${window}`
 }
 
 function ChecklistItem({ id }: { id: string }) {
@@ -61,6 +77,7 @@ export default function Dashboard() {
   const dominant = assessment ? dominantPollutant(assessment) : null
   const topActions = ['morning-windows', 'commute-lower-exposure', 'indoor-source-control']
   const completedActions = topActions.filter(id => checklist.includes(id)).length
+  const band = assessment?.category ? CATEGORY_CLASS[assessment.category] : 'unavailable'
 
   return (
     <div className="page">
@@ -95,35 +112,100 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <section className="dashboard-focus" aria-label="Today's priority summary">
-            <div className="dashboard-focus-main">
-              <span className="focus-icon"><ShieldCheck size={22} aria-hidden="true" /></span>
-              <div>
-                <small>TODAY&apos;S PRIORITY</small>
-                <h2>{priorityHeadline(assessment?.aqi)}</h2>
-                <p>
-                  <MapPin size={13} aria-hidden="true" /> {location.city}
-                  <span aria-hidden="true">·</span>
-                  {assessment?.category ?? 'Coverage insufficient'}
-                </p>
+          {/* 1. THE ANSWER: what to do, stated once, larger than anything else. */}
+          <section className={`dashboard-hero band-${band}`} aria-labelledby="priority-headline">
+            <div className="hero-copy">
+              <p className="eyebrow">
+                <MapPin size={12} aria-hidden="true" /> RIGHT NOW IN {location.city.toUpperCase()}
+              </p>
+              <h2 id="priority-headline">{priorityHeadline(assessment?.aqi)}</h2>
+              <p className="hero-reason">
+                {priorityReason(assessment?.aqi, assessment?.category, planner.bestWindow)}
+              </p>
+              <ul className="hero-chips" aria-label="Key readings">
+                <li>
+                  <small>Estimated AQI</small>
+                  <strong>{assessment?.aqi ?? 'Unavailable'}</strong>
+                </li>
+                <li>
+                  <small>Category</small>
+                  <strong>{assessment?.category ?? 'Insufficient coverage'}</strong>
+                </li>
+                <li>
+                  <small>Cleaner window</small>
+                  <strong>{planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : 'Unavailable'}</strong>
+                </li>
+              </ul>
+              <div className="hero-actions">
+                <Link className="primary-button" to="/planner">
+                  Open today&apos;s plan <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+                <Link className="secondary-button" to="/advisor">
+                  Ask Vayu a question
+                </Link>
               </div>
-              <Link className="focus-action" to="/planner">Open today&apos;s plan <ArrowRight size={15} aria-hidden="true" /></Link>
             </div>
-            <div className="dashboard-focus-stats">
-              <div>
-                <span className="focus-stat-icon"><Wind size={16} aria-hidden="true" /></span>
-                <span><small>ESTIMATED AQI</small><strong>{assessment?.aqi ?? 'Unavailable'}</strong></span>
+            <div className="hero-progress">
+              <span className="hero-progress-icon"><ShieldCheck size={20} aria-hidden="true" /></span>
+              <small>TODAY&apos;S ACTIONS</small>
+              <strong>{completedActions} / {topActions.length}</strong>
+              <div className="hero-progress-track" aria-hidden="true">
+                <span style={{ width: `${(completedActions / topActions.length) * 100}%` }} />
               </div>
-              <div>
-                <span className="focus-stat-icon"><Clock3 size={16} aria-hidden="true" /></span>
-                <span><small>CLEANER WINDOW</small><strong>{planner.bestWindow ? planner.bestWindow.start : 'Unavailable'}</strong></span>
-              </div>
-              <div>
-                <span className="focus-stat-icon"><CheckCircle2 size={16} aria-hidden="true" /></span>
-                <span><small>TODAY&apos;S ACTIONS</small><strong>{completedActions} / {topActions.length}</strong></span>
-              </div>
+              <p>{completedActions === topActions.length ? 'All three done for today.' : 'Tick them off as you go.'}</p>
             </div>
           </section>
+
+          {/* 2. WHEN: the day's three decision points. */}
+          <DayTimeline assessment={assessment ?? null} best={planner.bestWindow} worst={planner.worstWindow} />
+
+          {/* 3. DO: the actions themselves. */}
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">PERSONALIZED FOR YOUR HOUSEHOLD</p>
+              <h2>Do these three things today</h2>
+            </div>
+            <Link className="text-link" to="/planner">View all actions <ArrowRight size={15} aria-hidden="true" /></Link>
+          </div>
+
+          <div className="task-grid">
+            {topActions.map(id => <ChecklistItem key={id} id={id} />)}
+          </div>
+
+          {/* 4. WHY IT MATTERS for this household. */}
+          <div className="insights-grid">
+            <section className="insight-card">
+              <div className="insight-icon green"><Bike size={20} aria-hidden="true" /></div>
+              <div>
+                <small>LOW-EMISSION CHOICE</small>
+                <h3>{profile.commute === 'Metro' || profile.commute === 'Bus' ? 'Keep using public transport' : 'Try a lower-emission commute'}</h3>
+                <p>{profile.commute === 'Metro' || profile.commute === 'Bus'
+                  ? `Your saved ${profile.commute.toLowerCase()} commute already avoids solo-car emissions. Combine errands where practical.`
+                  : `Switching some ${profile.commute.toLowerCase()} trips to metro, bus or carpool can reduce personal transport emissions.`}</p>
+                <Link className="text-link" to="/impact">Model the difference <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+            </section>
+            <section className="insight-card">
+              <div className="insight-icon amber"><Wind size={20} aria-hidden="true" /></div>
+              <div>
+                <small>INDOOR AIR</small>
+                <h3>{profile.hasPurifier ? 'Maintain your filtration setup' : 'Source control comes first'}</h3>
+                <p>{profile.hasPurifier
+                  ? 'Check the purifier CADR against your room and replace filters on schedule.'
+                  : 'Damp dusting, kitchen exhaust and avoiding indoor combustion are free first steps before buying a purifier.'}</p>
+                <Link className="text-link" to="/indoor">Open indoor optimizer <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+            </section>
+          </div>
+
+          {/* 5. THE NUMBERS: detail for people who want it, below the decision. */}
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">THE NUMBERS BEHIND THE ADVICE</p>
+              <h2>Air quality and weather</h2>
+            </div>
+            <Link className="text-link" to="/air-quality">Full breakdown <ArrowRight size={15} aria-hidden="true" /></Link>
+          </div>
 
           <div className="overview-grid">
             <section className="aqi-card" aria-labelledby="dashboard-aqi">
@@ -209,43 +291,6 @@ export default function Dashboard() {
                       : 'Unavailable from current forecast'}
                   </strong>
                 </div>
-              </div>
-            </section>
-          </div>
-
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">PERSONALIZED FOR YOUR HOUSEHOLD</p>
-              <h2>Today&apos;s protection plan</h2>
-            </div>
-            <Link className="text-link" to="/planner">View all actions <ArrowRight size={15} aria-hidden="true" /></Link>
-          </div>
-
-          <div className="task-grid">
-            {topActions.map(id => <ChecklistItem key={id} id={id} />)}
-          </div>
-
-          <div className="insights-grid">
-            <section className="insight-card">
-              <div className="insight-icon green"><Bike size={20} aria-hidden="true" /></div>
-              <div>
-                <small>LOW-EMISSION CHOICE</small>
-                <h3>{profile.commute === 'Metro' || profile.commute === 'Bus' ? 'Keep using public transport' : 'Try a lower-emission commute'}</h3>
-                <p>{profile.commute === 'Metro' || profile.commute === 'Bus'
-                  ? `Your saved ${profile.commute.toLowerCase()} commute already avoids solo-car emissions. Combine errands where practical.`
-                  : `Switching some ${profile.commute.toLowerCase()} trips to metro, bus or carpool can reduce personal transport emissions.`}</p>
-                <Link className="text-link" to="/impact">Model the difference <ArrowRight size={14} aria-hidden="true" /></Link>
-              </div>
-            </section>
-            <section className="insight-card">
-              <div className="insight-icon amber"><Wind size={20} aria-hidden="true" /></div>
-              <div>
-                <small>INDOOR AIR</small>
-                <h3>{profile.hasPurifier ? 'Maintain your filtration setup' : 'Source control comes first'}</h3>
-                <p>{profile.hasPurifier
-                  ? 'Check the purifier CADR against your room and replace filters on schedule.'
-                  : 'Damp dusting, kitchen exhaust and avoiding indoor combustion are free first steps before buying a purifier.'}</p>
-                <Link className="text-link" to="/indoor">Open indoor optimizer <ArrowRight size={14} aria-hidden="true" /></Link>
               </div>
             </section>
           </div>

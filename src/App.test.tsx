@@ -74,8 +74,13 @@ describe('application integration', () => {
     })
     expect(screen.getAllByText(/Moderate/).length).toBeGreaterThan(0)
     expect(screen.getByText(/not an official CPCB station reading/i)).toBeInTheDocument()
+    // The dashboard leads with the action, not the number, and names the three
+    // moments a household plans around.
+    expect(screen.getByRole('heading', { name: /Plan outdoor activity around the cleaner forecast window/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Plan around these three moments/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Do these three things today/i })).toBeInTheDocument()
     expect(screen.queryByText('Ananya')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Ask Vayu/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /Ask Vayu/i }).length).toBeGreaterThan(0)
     expect(screen.getByRole('heading', { name: /Set up your household plan/i })).toBeInTheDocument()
   })
 

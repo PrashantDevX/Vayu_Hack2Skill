@@ -6,7 +6,7 @@ Run: 2026-11-19 (Asia/Calcutta). Latest Git `main` was clean and aligned with `o
 
 | Command | Result | Evidence |
 |---|---|---|
-| `npm test` | PASS | 24 files, 195 tests pass. |
+| `npm test` | PASS | 25 files, 200 tests pass. |
 | `npm run test:coverage` | PASS | Statements 94.78% (1017/1073); branches 86.17% (823/955); functions 97.67% (168/172); lines 98.03% (849/866). |
 | `npm run typecheck` | PASS | `tsc -b` exit 0. |
 | `npm run lint` | PASS | `oxlint` exit 0, zero warnings. |

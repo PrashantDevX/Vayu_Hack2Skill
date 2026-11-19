@@ -99,10 +99,16 @@ Shared components:
 
 - `AqiBadge` — category + number + colour, never colour alone; explicit unavailable state
 - `DataProvenance` — provider note (with stale variant) and the separate official-observation card
+- `DayTimeline` — the dashboard's "what happens today" row: now, cleaner window, higher-pollution window,
+  each with an explicit unavailable state when the hourly series cannot support it
 - `Modal` — native `<dialog>`, `showModal()`/`close()`, `aria-labelledby`, Escape handling
 - `LocationSearch` — city search, geolocation with permission errors, manual lat/lon, popular cities
 - `ProfileForm` — household and lifestyle sections, reused by onboarding and settings
 - `ErrorBoundary` — catches render failures, never logs household data
+
+The dashboard is ordered by decision value, not by data type: priority headline → the day's three windows →
+the three actions → household reasoning → the raw pollutant/weather cards → provenance. The number is evidence
+for the advice, never the headline.
 
 ### 2.6 Edge functions — `api/`
 
