@@ -60,9 +60,9 @@ Client-visible configuration is limited to public Open-Meteo endpoints.
 | Surface | Validation |
 | --- | --- |
 | Chat request | Zod: message 1–800, AQI 0–500, PM2.5 0–2000, enums/length caps on preference and window strings |
-| Plan request | Zod: profile ranges (counts 0–20, room 0–5000), window shape, ≤10 deterministic actions |
+| Plan request | Strict Zod objects, enum values, bounded profile ranges and forecast windows |
 | Official query | `city` required, trimmed, ≤80 chars |
-| Body size | `content-length` checked before parsing (12 kB / 16 kB) |
+| Body size | Declared-length check plus bounded stream reader (12 kB / 16 kB); malformed JSON returns 400, overflow 413 |
 | Method | Explicit 405 with `Allow` header |
 | JSON parse | Wrapped; malformed body → 400 |
 | Provider responses | Zod (or key-normalising parser) before use; unexpected shapes rejected |
@@ -99,8 +99,7 @@ concentration (0–100 000) before display. It never converts pollutant-only rec
 | Provider cache | 10 min air, 60 min geocoding, 10/3 min official |
 | AI output cap | 700–900 tokens |
 
-`x-forwarded-for` is trusted because the app is deployed behind Vercel's proxy. If you deploy elsewhere,
-re-derive the client key from a trusted header.
+The limiter uses platform-provided `x-vercel-forwarded-for` and ignores client-supplied `x-forwarded-for` and `x-real-ip`. When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, it uses an atomic Redis fixed-window counter with a hashed client key and 1.5 s timeout. If the store is absent or fails, a bounded 2,000-key per-instance limiter applies. Shared-instance enforcement has not been verified; fallback mode is not a global abuse or billing control.
 
 ---
 
@@ -123,16 +122,13 @@ That is a deliberate, narrow exception: no inline `<style>` or `<script>` is gen
 
 ---
 
-## 8. Audit findings (2026-11-18)
+## 8. Dependency audit (2026-11-19)
 
-`npm audit` reports **7 high-severity advisories**, all one root cause:
+`npm audit` reports **zero vulnerabilities** across the installed dependency tree (exit code 0). Re-check after dependency changes and before release.
 
-```
-picomatch <= 4.0.7 — ReDoS via single-branch repeated extglobs
-GHSA-fc5q-39xc-vjpf / CVE-2026-112366 — CVSS 8.7 (availability only)
-Patched versions: none
-Reached via: vite → tinyglobby/fdir → picomatch, vitest → same
-```
+Historical advisory details from the earlier audit are omitted because the current audit is clean.
+
+
 
 Assessment:
 
@@ -154,9 +150,9 @@ the runtime dependency set (React, React Router, Recharts, Zod, `@google/genai`)
 | Risk | Severity | Mitigation / status |
 | --- | --- | --- |
 | Dev-tool ReDoS (picomatch) | Low (dev-only) | Documented above; upgrade when patched |
-| Rate limit bypass via multiple instances | Low | Per-instance counters; move to shared KV for scale |
-| IP spoofing of `x-forwarded-for` | Low | Trusted only behind the Vercel proxy |
-| Prompt injection influencing wording | Low | Bounded prompt, JSON schema, enum titles, no tool access |
+| Rate limit bypass via multiple instances | Medium | Optional Upstash counter; provider is not configured/verified, so fallback remains per-instance |
+| Client spoofing forwarded identity headers | Low | Only platform `x-vercel-forwarded-for` is used; client forwarding headers are ignored |
+| Prompt injection influencing wording | Low | Strict schemas, JSON-serialized untrusted context, output safety/relevance checks, no tool access |
 | Provider returns a wrong-but-plausible official AQI | Medium | Provenance label plus original provider/timestamp shown; no silent correction |
 | Local storage readable on a shared device | Low | Documented; one-click delete; no identifiers stored |
 | Model estimate mistaken for official reading | Low | Separate cards, explicit wording, repeated disclaimer, covered by tests |

@@ -13,11 +13,11 @@ import { dominantPollutant } from '../utils/aqi'
 import { estimateCadr } from '../utils/impact'
 
 const SOURCES = {
-  cpcb: 'CPCB National Air Quality Index methodology',
-  who: 'WHO global air quality guidelines (2021)',
-  cams: 'Open-Meteo CAMS model forecast',
-  health: 'Public-health guidance for high-pollution episodes',
-}
+  cpcb: 'CPCB_AQI_METHODOLOGY',
+  who: 'WHO_AIR_QUALITY_GUIDELINES',
+  cams: 'OPEN_METEO_MODEL',
+  health: 'WHO_AIR_QUALITY_GUIDELINES',
+} as const
 
 const BASE_LIMITATION =
   'Model concentrations are not official CPCB station observations. Guidance is general public-health information, not a diagnosis or prescription.'

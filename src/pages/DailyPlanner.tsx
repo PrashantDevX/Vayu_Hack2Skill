@@ -5,6 +5,7 @@ import { recommendationTitle } from '../services/recommendationService'
 import { requestAiBrief } from '../services/planService'
 import type { AiBrief } from '../types'
 import { formatRelativeTime } from '../utils/date'
+import { SOURCE_METADATA } from '../constants/sources'
 
 export default function DailyPlanner() {
   const { planner, air, profile, checklist, toggleChecklistItem, refresh, location } = useApp()
@@ -85,7 +86,10 @@ export default function DailyPlanner() {
                 </div>
               ))}
             </div>
-            {brief.sources.length > 0 && <p className="data-note">Sources: {brief.sources.join(' · ')}</p>}
+            {brief.sources.length > 0 && <p className="data-note">Sources: {brief.sources.map((id, index) => {
+              const source = SOURCE_METADATA[id]
+              return <span key={id}>{index > 0 ? ' · ' : ''}<a href={source.url} target={source.url.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{source.name}</a></span>
+            })}</p>}
             <p className="data-note">AI explanations are validated for shape and length, but they are not a substitute for the deterministic plan or medical advice.</p>
           </>
         )}

@@ -24,7 +24,7 @@ describe('deterministic chat fallback', () => {
     expect(answer.answer).toContain('250')
     expect(answer.answer.toLowerCase()).toContain('avoid strenuous outdoor exercise')
     expect(answer.answer).toContain('04:00–06:00')
-    expect(answer.answer).toContain('not medical advice')
+    expect(answer.answer).toContain('not a diagnosis or medical treatment')
   })
 
   it('covers purifier, windows, school, transport, masks and severe AQI questions', () => {
@@ -46,7 +46,7 @@ describe('deterministic chat fallback', () => {
 
   it('admits missing AQI instead of inventing one', () => {
     const answer = fallbackChatAnswer('Is it safe outside?', { ...context, aqi: null, category: null })
-    expect(answer.answer).toContain('unavailable')
+    expect(answer.answer).toContain('I can help with air quality')
     expect(answer.answer).not.toContain('250')
   })
 })
@@ -56,7 +56,7 @@ describe('chat client', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ answer: 'Use the cleaner window.', sources: ['CAMS'] }), { status: 200 }),
+        new Response(JSON.stringify({ source: 'gemini', answer: 'Use the cleaner window.', sources: ['OPEN_METEO_MODEL'] }), { status: 200 }),
       ),
     )
     const result = await askVayu({ message: 'When should I walk?', context })

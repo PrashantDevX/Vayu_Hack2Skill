@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { AiBrief, PlannerResult, Profile } from '../types'
 import type { ChatContext } from './chatService'
+import { SOURCE_METADATA, type SourceId } from '../constants/sources'
 
 const briefSchema = z.object({
   source: z.enum(['gemini', 'unavailable']),
@@ -9,7 +10,7 @@ const briefSchema = z.object({
     .array(z.object({ title: z.string().min(1).max(80), guidance: z.string().min(10).max(700) }))
     .max(8)
     .default([]),
-  sources: z.array(z.string().max(300)).max(5).default([]),
+  sources: z.array(z.enum(Object.keys(SOURCE_METADATA) as [SourceId, ...SourceId[]])).max(5).default([]),
   reason: z.string().max(300).nullable().optional(),
 })
 
@@ -54,12 +55,6 @@ export async function requestAiBrief(request: PlanRequest): Promise<AiBrief> {
           hasPurifier: request.profile.hasPurifier,
           roomAreaSqFt: request.profile.roomAreaSqFt,
         },
-        deterministicActions: request.planner.recommendations.slice(0, 8).map(item => ({
-          title: item.title,
-          category: item.category,
-          action: item.action,
-          suggestedTime: item.suggestedTime,
-        })),
       }),
     })
 

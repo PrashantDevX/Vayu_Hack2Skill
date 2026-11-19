@@ -35,30 +35,34 @@ export function categoryFromAqi(value: number | null): AqiCategory | null {
  */
 export function computeSubIndex(key: PollutantKey, concentration: number | null): number | null {
   if (concentration === null || !Number.isFinite(concentration) || concentration < 0) return null
-  const definition = POLLUTANT_BY_KEY[key]
-  const { boundaries, thresholds } = definition
+  const bands = POLLUTANT_BY_KEY[key].bands
+  const interpolate = (low: number, high: number, aqiLow: number, aqiHigh: number) => {
+    if (high === low) return aqiHigh
+    return Math.round(((aqiHigh - aqiLow) / (high - low)) * (concentration - low) + aqiLow)
+  }
 
-  for (let index = 0; index < boundaries.length - 1; index += 1) {
-    const low = boundaries[index]
-    const high = boundaries[index + 1]
-    if (low === undefined || high === undefined) continue
-    if (concentration <= high) {
-      const iLow = thresholds[index] ?? 0
-      const iHigh = thresholds[index + 1] ?? AQI_SCALE_MAX
-      if (high === low) return iHigh
-      const interpolated = ((iHigh - iLow) / (high - low)) * (concentration - low) + iLow
-      return Math.round(interpolated)
+  for (let index = 0; index < bands.length; index += 1) {
+    const current = bands[index]
+    if (!current) continue
+    if (concentration >= current.concentrationLow && concentration <= current.concentrationHigh) {
+      return interpolate(current.concentrationLow, current.concentrationHigh, current.aqiLow, current.aqiHigh)
+    }
+    const next = bands[index + 1]
+    if (next && concentration > current.concentrationHigh && concentration < next.concentrationLow) {
+      // CPCB tables express whole-number concentration bands. Interpolate the
+      // small gaps for fractional provider values between adjacent bands.
+      return interpolate(current.concentrationHigh, next.concentrationLow, current.aqiHigh, next.aqiLow)
     }
   }
 
-  return AQI_SCALE_MAX
+  return concentration < 0 ? null : AQI_SCALE_MAX
 }
 
 export function isBeyondScale(key: PollutantKey, concentration: number | null): boolean {
   if (concentration === null || !Number.isFinite(concentration) || concentration < 0) return false
-  const boundaries = POLLUTANT_BY_KEY[key].boundaries
-  const last = boundaries[boundaries.length - 1]
-  return last !== undefined && concentration > last
+  const bands = POLLUTANT_BY_KEY[key].bands
+  const last = bands[bands.length - 1]
+  return last !== undefined && concentration > last.concentrationHigh
 }
 
 export function buildPollutantResults(

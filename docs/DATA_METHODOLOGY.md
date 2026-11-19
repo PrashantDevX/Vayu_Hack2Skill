@@ -27,17 +27,19 @@ official observation — a published AQI or the station's published concentratio
 
 ### 2.1 Breakpoints
 
-From the CPCB National Air Quality Index methodology. CO is in mg/m³; all other pollutants in µg/m³.
+From the [CPCB National Air Quality Index table](https://airquality.cpcb.gov.in/ccr_docs/About_AQI.pdf) and
+its worked PM2.5 examples. CO is in mg/m³; all other pollutants are in µg/m³. The ranges below are explicit,
+non-overlapping concentration bands with corresponding AQI endpoints.
 
-| Pollutant | 0–50 | 51–100 | 101–200 | 201–300 | 301–400 | 401–500 |
+| Pollutant | Good (0–50) | Satisfactory (51–100) | Moderate (101–200) | Poor (201–300) | Very Poor (301–400) | Severe (401–500) |
 | --- | --- | --- | --- | --- | --- | --- |
-| PM2.5 (24 h) | 0–30 | 30–60 | 60–90 | 90–120 | 120–250 | 250–500 |
-| PM10 (24 h) | 0–50 | 50–100 | 100–250 | 250–350 | 350–430 | 430–600 |
-| NO₂ (24 h) | 0–40 | 40–80 | 80–180 | 180–280 | 280–400 | 400–600 |
-| SO₂ (24 h) | 0–40 | 40–80 | 80–380 | 380–800 | 800–1600 | 1600–2000 |
-| CO (8 h) | 0–1 | 1–2 | 2–10 | 10–17 | 17–34 | 34–50 |
-| O₃ (8 h) | 0–50 | 50–100 | 100–168 | 168–208 | 208–748 | 748–1000 |
-| NH₃ (24 h) | 0–200 | 200–400 | 400–800 | 800–1200 | 1200–1800 | 1800–2400 |
+| PM2.5 (24 h) | 0–30 | 31–60 | 61–90 | 91–120 | 121–250 | 251–500 |
+| PM10 (24 h) | 0–50 | 51–100 | 101–250 | 251–350 | 351–430 | 431–600 |
+| NO₂ (24 h) | 0–40 | 41–80 | 81–180 | 181–280 | 281–400 | 401–600 |
+| SO₂ (24 h) | 0–40 | 41–80 | 81–380 | 381–800 | 801–1600 | 1601–2000 |
+| CO (8 h, mg/m³) | 0–1.0 | 1.1–2.0 | 2.1–10.0 | 10.1–17.0 | 17.1–34.0 | 34.1–50.0 |
+| O₃ (8 h) | 0–50 | 51–100 | 101–168 | 169–208 | 209–748 | 749–1000 |
+| NH₃ (24 h) | 0–200 | 201–400 | 401–800 | 801–1200 | 1201–1800 | 1801–2400 |
 
 ### 2.2 Sub-index
 
@@ -45,8 +47,11 @@ From the CPCB National Air Quality Index methodology. CO is in mg/m³; all other
 I = ((I_high − I_low) / (C_high − C_low)) × (C − C_low) + I_low
 ```
 
-Linear interpolation inside the bracket containing the concentration, rounded to an integer. Concentration
-above the last breakpoint is capped at 500 and flagged with `beyondScale`.
+Linearly interpolate between the lower concentration/AQI endpoint and upper concentration/AQI endpoint of
+the selected band, then round to an integer. For fractional readings in the small gaps between published
+whole-number bands, interpolate between adjacent endpoints. This matches CPCB's examples: PM2.5 31 µg/m³ →
+51 and 45 µg/m³ → 75; CO 1.1 mg/m³ → 51; NH₃ 201 µg/m³ → 51. Concentrations above the represented upper
+band are capped at 500 and flagged with `beyondScale`.
 
 ### 2.3 Overall index
 

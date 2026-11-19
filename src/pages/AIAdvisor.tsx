@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ArrowRight, Bot, Send, Sparkles } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { askVayu } from '../services/chatService'
+import { SOURCE_METADATA } from '../constants/sources'
 import type { ChatMessage } from '../types'
 
 const SUGGESTIONS = [
@@ -95,10 +96,16 @@ export default function AIAdvisor() {
                 <div className="message-body">
                   <p>{message.text}</p>
                   {message.role === 'assistant' && message.source === 'fallback' && index > 0 && (
-                    <small className="message-source">Deterministic guidance · AI unavailable</small>
+                    <small className="message-source">Deterministic guidance</small>
+                  )}
+                  {message.role === 'assistant' && message.source === 'gemini' && (
+                    <small className="message-source">AI-assisted, checked against Vayu safety rules</small>
                   )}
                   {message.sources && message.sources.length > 0 && (
-                    <small className="message-source">Sources: {message.sources.join(' · ')}</small>
+                    <small className="message-source">Sources: {message.sources.map((id, sourceIndex) => {
+                      const source = SOURCE_METADATA[id]
+                      return <span key={id}>{sourceIndex > 0 ? ' · ' : ''}<a href={source.url} target={source.url.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{source.name}</a></span>
+                    })}</small>
                   )}
                 </div>
               </div>

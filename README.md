@@ -37,7 +37,7 @@ deployed Vercel project; without them the UI shows explicit "unavailable" states
 ```bash
 npm run typecheck      # tsc -b (app + node + api projects)
 npm run lint           # oxlint, zero warnings
-npm test               # 135 tests, 22 files
+npm test               # 180 tests, 24 files
 npm run test:coverage   # v8 coverage with enforced thresholds
 npm run build          # production build
 npm run check:providers # probe Gemini + data.gov.in with your .env keys
@@ -56,6 +56,7 @@ Copy `.env.example` to `.env` for local serverless development. Nothing is requi
 | `GEMINI_MODEL` | Override the default `gemini-3.5-flash-lite` |
 | `DATA_GOV_IN_API_KEY` | Official CPCB station data via data.gov.in (`/api/aqi`) |
 | `DATA_GOV_IN_RESOURCE_ID` | data.gov.in resource id (defaults to the CPCB real-time dataset) |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional shared fixed-window API rate limits; without them, bounded per-instance limits apply |
 
 Without these, the deterministic planner, deterministic chat, and model-data dashboard remain fully usable.
 

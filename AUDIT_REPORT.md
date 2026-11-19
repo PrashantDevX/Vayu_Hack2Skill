@@ -1,5 +1,37 @@
 # Vayu independent baseline audit
 
+## Third remediation sprint addendum (2026-11-19)
+
+**Score:** 87/100, unchanged from the previous internal assessment. Original preserved baseline: 86/100. The fixes below are verified locally, but no new score is awarded: post-fix live Gemini quality and deployment/browser behavior were not verified, and adding code/tests alone is not scoring evidence.
+
+**Coverage:** baseline before this sprint 85.06% branches (712/837); current 86.24% (790/916), with 94.80% statements, 97.61% functions and 98.21% lines. Coverage scope expanded with new API safety/body tests, so raw counts differ.
+
+### Verified remediation record
+
+| Defect | Confirmed issue and change | Modified files | Before → after evidence |
+|---|---|---|---|
+| VAYU-AQI-001 | CPCB breakpoint representation interpolated from continuous anchors and disagreed at published band starts. Added explicit non-overlapping concentration bands, corrected interpolation, preserved model-estimate disclosure. | `src/constants/aqi.ts`, `src/utils/aqi.ts`, `src/utils/aqi.test.ts`, `docs/DATA_METHODOLOGY.md` | PM2.5 31: old 52 → corrected 51; CO 1.1: old 55 → corrected 51; NH3 201: old 50 → corrected 51. Boundary and fractional tests pass. |
+| VAYU-AI-002 | Planner had no post-generation safety/relevance checks. Shared server guard now validates chat and every plan section; unsafe/irrelevant responses use deterministic fallback or unavailable plan. | `api/_lib/aiOutput.ts`, `api/_lib/aiOutput.test.ts`, `api/chat.ts`, `api/chat.test.ts`, `api/plan.ts`, `api/plan.test.ts` | Previously a schema-valid DIY filtration completion could pass. Now varied ozone, DIY filter/fan, medical, unsupported reduction, city-AQI and blind-ventilation cases are rejected in tests. No post-fix live Gemini rate is claimed. |
+| VAYU-AI-003 | Chat did not distinguish Gemini from generic server fallback; model could invent source strings. Shared intent fallback, typed source discriminator and server-owned source IDs now feed accessible trusted source links. | `src/services/chatFallback.ts`, `src/services/chatService.ts`, `src/services/chatService.test.ts`, `src/constants/sources.ts`, `src/types.ts`, `src/pages/AIAdvisor.tsx`, `src/pages/DailyPlanner.tsx`, `api/chat.ts`, `api/plan.ts`, `src/services/planService.ts`, `src/services/recommendationService.ts`, related tests | Responses now label `gemini` vs `fallback`; unknown questions get a scope response; generated citations are discarded and source metadata is server-owned. 20 deterministic fallback intent cases pass. |
+| VAYU-SEC-001 | Prompt context accepted free-form fields and client-authored planner actions; body size trusted only Content-Length. Strict enums/objects/bounds, JSON-separated untrusted input, removal of browser-authored actions and bounded streaming JSON parsing added. | `api/chat.ts`, `api/chat.test.ts`, `api/plan.ts`, `api/plan.test.ts`, `api/_lib/requestBody.ts`, `api/_lib/requestBody.test.ts`, `src/services/planService.ts` | Invalid controls/injection/unknown fields return 400; oversized measured streams return 413. Embedded/fenced planner JSON is parsed safely and malformed output returns unavailable. |
+| VAYU-SEC-002 | Limiter was process-local and keyed from spoofable forwarding headers. Added optional atomic Upstash Redis fixed-window counter, hashed client identity, timeout and bounded local fallback; identity reads only the Vercel-managed header. | `api/_lib/rateLimit.ts`, `api/_lib/rateLimit.test.ts`, `api/aqi.ts`, `api/chat.ts`, `api/plan.ts`, `.env.example`, `README.md`, `docs/SECURITY.md` | Local behavior, retry values, shared-command construction and outage fallback pass unit tests. No Upstash credentials/shared-instance environment was available; global enforcement remains unverified and local fallback is explicitly per-instance. |
+| VAYU-REQ-001 | No byte limit for streamed requests without Content-Length. | `api/_lib/requestBody.ts`, `api/_lib/requestBody.test.ts`, `api/chat.ts`, `api/plan.ts` | Requests over 12/16 kB now return 413 before unbounded buffering; malformed JSON returns 400. |
+
+### Current assessment and limits
+
+- Automated verification: 180 tests / 24 files pass; typecheck, lint, build and full `npm audit` pass. Provider script passes for configured Gemini and data.gov.in. Details are in `TEST_RESULTS.md`.
+- Twenty synthetic local API cases evaluate deterministic fallback behavior across all requested intent classes. They are not a post-fix Gemini quality run. Sanitized per-case rubric results are in `docs/synthetic-ai-evaluation.json`.
+- The production deployment was not changed or smoke-tested. Deployment/browser checks were not run because this sprint explicitly limits them to cases where authorized; no production release authorization was given.
+- Upstash cross-instance rate limiting is implemented but unconfigured and unverified. Without both Redis REST variables, the bounded limiter remains process-local.
+- Current internal score remains 87/100 beside original 86/100 and previous 87/100. The 98+ target is not established by this evidence.
+
+**Modified files:** `.env.example`, `AUDIT_REPORT.md`, `README.md`, `TEST_RESULTS.md`, `api/_lib/aiOutput.ts`, `api/_lib/aiOutput.test.ts`, `api/_lib/rateLimit.ts`, `api/_lib/rateLimit.test.ts`, `api/_lib/requestBody.ts`, `api/_lib/requestBody.test.ts`, `api/aqi.ts`, `api/chat.ts`, `api/chat.test.ts`, `api/plan.ts`, `api/plan.test.ts`, `docs/AI_DESIGN.md`, `docs/DATA_METHODOLOGY.md`, `docs/SECURITY.md`, `docs/TESTING.md`, `docs/synthetic-ai-evaluation.json`, `src/App.test.tsx`, `src/constants/aqi.ts`, `src/constants/sources.ts`, `src/pages/AIAdvisor.tsx`, `src/pages/DailyPlanner.tsx`, `src/services/chatFallback.ts`, `src/services/chatService.ts`, `src/services/chatService.test.ts`, `src/services/planService.ts`, `src/services/planService.test.ts`, `src/services/recommendationService.ts`, `src/types.ts`, `src/utils/aqi.ts`, `src/utils/aqi.test.ts`.
+
+
+### Historical second sprint report
+
+The assessment below records the second sprint state and its score rationale; the third sprint status and current verification are summarized above.
+
 **Audit date:** 2026-11-19 (Asia/Calcutta)  
 **Scope:** Initial audit plus focused follow-up remediation of the verified coverage weakness.  
 **Name note:** The checked-out project identifies itself as Vayu (`package.json`, README and product docs), while the supplied brief calls it AirAware. This report evaluates the checked-out Vayu repository.  
@@ -11,7 +43,7 @@
 
 The repository is a real modular application, not a static mockup. It has live Open-Meteo model data, an optional official-data adapter, deterministic planning and chat fallbacks, server-side Gemini handlers, input schemas, privacy controls, and meaningful unit/integration coverage. Typecheck, lint, tests, coverage thresholds and production build all pass in this environment.
 
-The second sprint raised branch coverage to 85.06% (712/837), ran live checks against configured Gemini and data.gov.in, confirmed Open-Meteo data, smoke-tested deployed API health/AQI/chat/plan, and performed 20 live chat cases. The AI cases exposed one unsafe DIY filtration recommendation and several irrelevant/generic answers. A local response guard and regression test now reject the observed unsafe recommendation class. The deployment was not changed and does not contain this fix. Lighthouse, axe, deployed browser and geolocation-permission review remain unverified.
+At the time of the second sprint, branch coverage had reached 85.06% (712/837), and live checks passed against configured Gemini and data.gov.in, Open-Meteo data was confirmed, deployed API health/AQI/chat/plan were smoke-tested, and 20 live chat cases were run. The AI cases exposed one unsafe DIY filtration recommendation and several irrelevant/generic answers. A local response guard and regression test now reject the observed unsafe recommendation class. The deployment was not changed and does not contain this fix. Lighthouse, axe, deployed browser and geolocation-permission review remain unverified.
 
 No P0 blocker was verified. VAYU-TST-001 is resolved at 85.06% branch coverage. Remaining P1 evidence gap is external browser verification; the AI response guard is fixed locally but awaiting a separately authorized production release.
 

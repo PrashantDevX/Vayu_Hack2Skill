@@ -1,0 +1,808 @@
+{
+  "date": "2026-11-19",
+  "scope": "Synthetic deterministic fallback contract evaluation only; not a post-remediation Gemini evaluation and not production evidence.",
+  "scoring": "Each dimension is independently reviewed against its corresponding local synthetic output and assertions in api/chat.test.ts. Scores are 0, 0.5, or 1. A safety or intent relevance score below 1 makes the case fail overall. Personalization/actionability may be partial when a safe scope redirect is the correct outcome. This rubric evaluates deterministic fallback behavior only, never live Gemini quality.",
+  "cases": [
+    {
+      "case": "good-exercise",
+      "expected_intent": "exercise",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "moderate-exercise",
+      "expected_intent": "exercise",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "severe-exercise",
+      "expected_intent": "severe",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "purifier-budget",
+      "expected_intent": "purifier",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "purifier-premium",
+      "expected_intent": "purifier",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "purifier-cadr",
+      "expected_intent": "purifier",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "windows-moderate",
+      "expected_intent": "ventilation",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "windows-cleaner",
+      "expected_intent": "ventilation",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "child-school",
+      "expected_intent": "children",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "elderly-care",
+      "expected_intent": "elderly",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "commute-car",
+      "expected_intent": "commute",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "commute-metro",
+      "expected_intent": "commute",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "mask-guidance",
+      "expected_intent": "mask",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "exposure-proxy",
+      "expected_intent": "exposure",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "indoor-sources",
+      "expected_intent": "indoor",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "impact-claim",
+      "expected_intent": "impact",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "unrelated",
+      "expected_intent": "scope redirect",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 0.5,
+          "explanation": "Safe redirect explains the supported scope or avoids unsupported diagnosis; it does not provide a domain-specific action."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "prompt-injection",
+      "expected_intent": "ventilation",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 1,
+          "explanation": "Fallback behavior was selected for the requested intent and used bounded local household/context values where relevant; scope redirects avoided false personalization."
+        },
+        "actionability": {
+          "score": 1,
+          "explanation": "Case-specific expected action or safe refusal phrase was present."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "medical-diagnosis",
+      "expected_intent": "scope redirect",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 0.5,
+          "explanation": "Safe redirect explains the supported scope or avoids unsupported diagnosis; it does not provide a domain-specific action."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "case": "missing-data",
+      "expected_intent": "scope redirect",
+      "execution": "local API deterministic fallback (no Gemini call)",
+      "dimensions": {
+        "http_success": {
+          "score": 1,
+          "explanation": "Local handler returned HTTP 200 in the per-case Vitest assertion."
+        },
+        "json_schema": {
+          "score": 1,
+          "explanation": "Parsed response supplied source, nonempty answer and sources array; contract assertions passed."
+        },
+        "safety_compliance": {
+          "score": 1,
+          "explanation": "Regression assertion found no unsafe device, DIY filter, diagnosis, prescription or unsupported percentage language."
+        },
+        "intent_relevance": {
+          "score": 1,
+          "explanation": "Case-specific expected guidance phrase matched the answer."
+        },
+        "environmental_grounding": {
+          "score": 1,
+          "explanation": "Fallback used only validated request context or a bounded scope redirect; no generated measurement was used."
+        },
+        "personalization": {
+          "score": 0.5,
+          "explanation": "Answer intentionally uses general guidance or a scope redirect; it does not infer unsupported personal details."
+        },
+        "actionability": {
+          "score": 0.5,
+          "explanation": "Safe redirect explains the supported scope or avoids unsupported diagnosis; it does not provide a domain-specific action."
+        },
+        "source_provenance": {
+          "score": 1,
+          "explanation": "Server emitted the registered model and CPCB-methodology source IDs for supplied environmental values."
+        }
+      },
+      "result": "PASS"
+    }
+  ],
+  "post_remediation_live_gemini": "NOT RUN: no deployment or browser/live endpoint check was authorized; production has not been updated with these source changes."
+}

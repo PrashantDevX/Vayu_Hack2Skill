@@ -305,7 +305,7 @@ async function fetchOfficial(city: string, resourceId: string, apiKey: string): 
 }
 
 async function handler(req: Request): Promise<Response> {
-  const limit = checkRateLimit(`aqi:${clientKey(req)}`, 60)
+  const limit = await checkRateLimit(`aqi:${clientKey(req)}`, 60)
   if (!limit.allowed) {
     return Response.json(
       { error: 'Too many requests' },

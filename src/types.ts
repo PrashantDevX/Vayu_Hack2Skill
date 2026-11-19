@@ -1,3 +1,5 @@
+import type { SourceId } from './constants/sources'
+
 export type PollutantKey = 'pm25' | 'pm10' | 'no2' | 'so2' | 'co' | 'o3' | 'nh3'
 
 export type AqiCategory = 'Good' | 'Satisfactory' | 'Moderate' | 'Poor' | 'Very Poor' | 'Severe'
@@ -218,19 +220,19 @@ export interface AiBrief {
   source: 'gemini' | 'unavailable'
   greeting: string | null
   sections: AiBriefSection[]
-  sources: string[]
+  sources: SourceId[]
   reason: string | null
 }
 
 export interface ChatAnswer {
   answer: string
-  sources: string[]
+  sources: SourceId[]
   source: 'gemini' | 'fallback'
 }
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
   text: string
-  sources?: string[]
+  sources?: SourceId[]
   source?: 'gemini' | 'fallback'
 }

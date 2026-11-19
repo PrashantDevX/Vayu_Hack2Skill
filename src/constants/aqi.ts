@@ -2,7 +2,7 @@ import type { AqiCategory, BudgetBand, CommuteMode, PollutantKey, Profile } from
 
 /**
  * CPCB National AQI breakpoints. Values are the official category boundaries,
- * expressed as continuous ranges for interpolation. CO is in mg/m3; all other
+ * expressed as explicit non-overlapping concentration bands. CO is in mg/m3; all other
  * pollutants are in µg/m3.
  *
  * Sources: CPCB National Air Quality Index (2014) technical document and the
@@ -15,13 +15,22 @@ export interface PollutantDefinition {
   label: string
   unit: string
   averagingPeriod: string
-  /** Ascending boundary list, length must equal thresholds.length + 1. */
-  boundaries: readonly number[]
-  /** AQI sub-index thresholds, length must equal boundaries.length - 1. */
-  thresholds: readonly number[]
+  bands: readonly ConcentrationBand[]
 }
 
-const AQI_THRESHOLDS = [0, 50, 100, 200, 300, 400, 500] as const
+export interface ConcentrationBand {
+  concentrationLow: number
+  concentrationHigh: number
+  aqiLow: number
+  aqiHigh: number
+}
+
+const band = (concentrationLow: number, concentrationHigh: number, aqiLow: number, aqiHigh: number): ConcentrationBand => ({
+  concentrationLow,
+  concentrationHigh,
+  aqiLow,
+  aqiHigh,
+})
 
 export const POLLUTANTS: readonly PollutantDefinition[] = [
   {
@@ -29,56 +38,49 @@ export const POLLUTANTS: readonly PollutantDefinition[] = [
     label: 'PM2.5',
     unit: 'µg/m³',
     averagingPeriod: '24-hour average',
-    boundaries: [0, 30, 60, 90, 120, 250, 500],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 30, 0, 50), band(31, 60, 51, 100), band(61, 90, 101, 200), band(91, 120, 201, 300), band(121, 250, 301, 400), band(251, 500, 401, 500)],
   },
   {
     key: 'pm10',
     label: 'PM10',
     unit: 'µg/m³',
     averagingPeriod: '24-hour average',
-    boundaries: [0, 50, 100, 250, 350, 430, 600],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 50, 0, 50), band(51, 100, 51, 100), band(101, 250, 101, 200), band(251, 350, 201, 300), band(351, 430, 301, 400), band(431, 600, 401, 500)],
   },
   {
     key: 'no2',
     label: 'NO₂',
     unit: 'µg/m³',
     averagingPeriod: '24-hour average',
-    boundaries: [0, 40, 80, 180, 280, 400, 600],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 40, 0, 50), band(41, 80, 51, 100), band(81, 180, 101, 200), band(181, 280, 201, 300), band(281, 400, 301, 400), band(401, 600, 401, 500)],
   },
   {
     key: 'so2',
     label: 'SO₂',
     unit: 'µg/m³',
     averagingPeriod: '24-hour average',
-    boundaries: [0, 40, 80, 380, 800, 1600, 2000],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 40, 0, 50), band(41, 80, 51, 100), band(81, 380, 101, 200), band(381, 800, 201, 300), band(801, 1600, 301, 400), band(1601, 2000, 401, 500)],
   },
   {
     key: 'co',
     label: 'CO',
     unit: 'mg/m³',
     averagingPeriod: '8-hour average',
-    boundaries: [0, 1, 2, 10, 17, 34, 50],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 1, 0, 50), band(1.1, 2, 51, 100), band(2.1, 10, 101, 200), band(10.1, 17, 201, 300), band(17.1, 34, 301, 400), band(34.1, 50, 401, 500)],
   },
   {
     key: 'o3',
     label: 'O₃',
     unit: 'µg/m³',
     averagingPeriod: '8-hour average',
-    boundaries: [0, 50, 100, 168, 208, 748, 1000],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 50, 0, 50), band(51, 100, 51, 100), band(101, 168, 101, 200), band(169, 208, 201, 300), band(209, 748, 301, 400), band(749, 1000, 401, 500)],
   },
   {
     key: 'nh3',
     label: 'NH₃',
     unit: 'µg/m³',
     averagingPeriod: '24-hour average',
-    boundaries: [0, 200, 400, 800, 1200, 1800, 2400],
-    thresholds: AQI_THRESHOLDS,
+    bands: [band(0, 200, 0, 50), band(201, 400, 51, 100), band(401, 800, 101, 200), band(801, 1200, 201, 300), band(1201, 1800, 301, 400), band(1801, 2400, 401, 500)],
   },
 ]
 

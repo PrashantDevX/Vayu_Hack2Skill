@@ -86,6 +86,39 @@ describe('application integration', () => {
     }
   })
 
+  it('preserves assistant source labels and renders trusted source links', async () => {
+    window.history.pushState({}, '', '/advisor')
+    localStorage.setItem('vayu.onboarded.v1', 'true')
+    const answers = [
+      { source: 'fallback', answer: 'Fallback environmental guidance.', sources: ['OPEN_METEO_MODEL'] },
+      { source: 'gemini', answer: 'Validated AI environmental guidance.', sources: ['CPCB_AQI_METHODOLOGY'] },
+    ]
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/api/chat') return new Response(JSON.stringify(answers.shift()), { status: 200 })
+      if (url.includes('air-quality-api')) return new Response(JSON.stringify(airPayload), { status: 200 })
+      if (url.includes('/v1/forecast')) return new Response(JSON.stringify(weatherPayload), { status: 200 })
+      return new Response('{}', { status: 404 })
+    }))
+    render(<App />)
+
+    const input = await screen.findByRole('textbox', { name: 'Ask Vayu a question' })
+    fireEvent.change(input, { target: { value: 'Should I run?' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/chat', expect.any(Object)))
+    expect(await screen.findByText(/estimated CPCB-style model AQI 200/)).toBeInTheDocument()
+    expect(screen.getByText('Deterministic guidance')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Open-Meteo CAMS model' })).toHaveAttribute('href', 'https://open-meteo.com/en/docs/air-quality-api')
+
+    fireEvent.change(input, { target: { value: 'When should I walk?' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+    expect(await screen.findByText('Validated AI environmental guidance.')).toBeInTheDocument()
+    expect(screen.getByText('AI-assisted, checked against Vayu safety rules')).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'CPCB National AQI methodology' }).every(link =>
+      link.getAttribute('href') === 'https://airquality.cpcb.gov.in/ccr_docs/About_AQI.pdf',
+    )).toBe(true)
+  })
+
   it('shows sustainable alternatives without inventing kilogram savings', async () => {
     window.history.pushState({}, '', '/impact')
     render(<App />)

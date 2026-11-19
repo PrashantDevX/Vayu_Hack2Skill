@@ -35,7 +35,7 @@ describe('plan client', () => {
             source: 'gemini',
             greeting: 'A short brief for today.',
             sections: [{ title: 'Commute', guidance: 'Use the cleaner forecast window and avoid busy roads.' }],
-            sources: ['CAMS'],
+            sources: ['OPEN_METEO_MODEL'],
           }),
           { status: 200 },
         ),
@@ -47,7 +47,7 @@ describe('plan client', () => {
     const init = vi.mocked(fetch).mock.calls[0]![1] as RequestInit
     const body = JSON.parse(String(init.body))
     expect(body.profile).not.toHaveProperty('name')
-    expect(body.deterministicActions).toEqual([])
+    expect(body).not.toHaveProperty('deterministicActions')
   })
 
   it('returns an unavailable brief without throwing', async () => {

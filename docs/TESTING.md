@@ -10,11 +10,11 @@ npm run test:watch     # watch mode
 npm run test:coverage  # v8 coverage, thresholds enforced
 ```
 
-Expected on `main`:
+Latest verified result (2026-11-19):
 
 ```
-Test Files  22 passed (22)
-Tests      135 passed (135)
+Test Files  24 passed (24)
+Tests      180 passed (180)
 ```
 
 ---
@@ -33,23 +33,26 @@ Tests      135 passed (135)
 
 ## 3. Coverage
 
-Measured 2026-11-18 over `src/utils`, `src/services`, `src/constants` and `api`:
+Measured 2026-11-19 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 93.14% (842/904) | 90% |
-| Branches | 81.31% (679/835) | 78% |
-| Functions | 96.59% (142/147) | 92% |
-| Lines | 96.29% (727/755) | 93% |
+| Statements | 94.80% (986/1,040) | 90% |
+| Branches | 86.24% (790/916) | 78% |
+| Functions | 97.61% (164/168) | 92% |
+| Lines | 98.21% (826/841) | 93% |
 
 Per-module highlights:
 
 | File | Statements | Branches |
 | --- | --- | --- |
-| `api/aqi.ts` | 89.5% | 82.6% |
-| `api/chat.ts` | 92.7% | 71.7% |
-| `api/plan.ts` | 83.0% | 65.9% |
-| `src/services/aqiService.ts` | 92.3% | 76.6% |
+| `api/aqi.ts` | 88.27% | 77.85% |
+| `api/chat.ts` | 96.29% | 76.11% |
+| `api/plan.ts` | 92.77% | 88.00% |
+| `api/_lib/aiOutput.ts` | 100% | 62.50% |
+| `api/_lib/requestBody.ts` | 96.29% | 100% |
+| `api/_lib/rateLimit.ts` | 92.85% | 85.36% |
+| `src/services/aqiService.ts` | 92.30% | 76.59% |
 | `src/services/geocodingService.ts` | 100% | 100% |
 | `src/services/http.ts` | 95.1% | 90.0% |
 | `src/services/officialService.ts` | 96.9% | 91.9% |

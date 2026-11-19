@@ -43,6 +43,35 @@ describe('CPCB category boundaries', () => {
 })
 
 describe('CPCB sub-index interpolation', () => {
+  it('matches the official CPCB concentration-band starts and ends for each pollutant', () => {
+    const cases = [
+      ['pm25', [[0, 0, 30, 50], [31, 51, 60, 100], [61, 101, 90, 200], [91, 201, 120, 300], [121, 301, 250, 400], [251, 401, 500, 500]]],
+      ['pm10', [[0, 0, 50, 50], [51, 51, 100, 100], [101, 101, 250, 200], [251, 201, 350, 300], [351, 301, 430, 400], [431, 401, 600, 500]]],
+      ['no2', [[0, 0, 40, 50], [41, 51, 80, 100], [81, 101, 180, 200], [181, 201, 280, 300], [281, 301, 400, 400], [401, 401, 600, 500]]],
+      ['so2', [[0, 0, 40, 50], [41, 51, 80, 100], [81, 101, 380, 200], [381, 201, 800, 300], [801, 301, 1600, 400], [1601, 401, 2000, 500]]],
+      ['co', [[0, 0, 1, 50], [1.1, 51, 2, 100], [2.1, 101, 10, 200], [10.1, 201, 17, 300], [17.1, 301, 34, 400], [34.1, 401, 50, 500]]],
+      ['o3', [[0, 0, 50, 50], [51, 51, 100, 100], [101, 101, 168, 200], [169, 201, 208, 300], [209, 301, 748, 400], [749, 401, 1000, 500]]],
+      ['nh3', [[0, 0, 200, 50], [201, 51, 400, 100], [401, 101, 800, 200], [801, 201, 1200, 300], [1201, 301, 1800, 400], [1801, 401, 2400, 500]]],
+    ] as const
+
+    for (const [pollutant, bands] of cases) {
+      for (const [low, aqiLow, high, aqiHigh] of bands) {
+        expect(computeSubIndex(pollutant, low), `${pollutant} at band start ${low}`).toBe(aqiLow)
+        expect(computeSubIndex(pollutant, high), `${pollutant} at band end ${high}`).toBe(aqiHigh)
+      }
+    }
+  })
+
+  it('matches CPCB transition examples and interpolates fractional inputs consistently', () => {
+    expect(computeSubIndex('pm25', 31)).toBe(51)
+    expect(computeSubIndex('pm25', 45)).toBe(75)
+    expect(computeSubIndex('pm25', 30.5)).toBe(51)
+    expect(computeSubIndex('co', 1.1)).toBe(51)
+    expect(computeSubIndex('co', 1.05)).toBe(51)
+    expect(computeSubIndex('nh3', 201)).toBe(51)
+    expect(computeSubIndex('nh3', 200.5)).toBe(51)
+  })
+
   it('maps PM2.5 breakpoints and midpoints', () => {
     expect(computeSubIndex('pm25', 0)).toBe(0)
     expect(computeSubIndex('pm25', 30)).toBe(50)
@@ -59,7 +88,7 @@ describe('CPCB sub-index interpolation', () => {
     expect(computeSubIndex('pm10', 600)).toBe(500)
     expect(computeSubIndex('no2', 80)).toBe(100)
     expect(computeSubIndex('no2', 180)).toBe(200)
-    expect(computeSubIndex('co', 1.5)).toBe(75)
+    expect(computeSubIndex('co', 1.5)).toBe(73)
     expect(computeSubIndex('co', 10)).toBe(200)
   })
 
@@ -74,6 +103,8 @@ describe('CPCB sub-index interpolation', () => {
     expect(computeSubIndex('pm25', null)).toBeNull()
     expect(computeSubIndex('pm25', -2)).toBeNull()
     expect(computeSubIndex('pm25', Number.NaN)).toBeNull()
+    expect(computeSubIndex('pm25', Number.POSITIVE_INFINITY)).toBeNull()
+    expect(computeSubIndex('pm25', Number.NEGATIVE_INFINITY)).toBeNull()
   })
 })
 
