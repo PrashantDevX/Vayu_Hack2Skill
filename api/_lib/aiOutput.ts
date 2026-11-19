@@ -16,7 +16,7 @@ export interface AiSafetyContext {
 }
 
 const SAFETY_RULES: readonly { code: AiRejectionCode; pattern: RegExp }[] = [
-  { code: 'ozone_device', pattern: /\b(?:ozone generator|ozone-producing (?:device|air cleaner|purifier)|ozone air purifier|ozone-based air cleaner)\b/i },
+  { code: 'ozone_device', pattern: /\b(?:ozone generators?|ozone-producing (?:devices?|air cleaners?|purifiers?)|ozone air purifiers?|ozone-based air cleaners?|ozone machines?)\b/i },
   {
     code: 'unsafe_diy_filtration',
     pattern: /\b(?:DIY|homemade|home-built|improvised|box[- ]fan|MERV|wire|tape|attach|strap|mount|build|construct|assemble)\b.{0,100}\b(?:filter|fan|filtration|air cleaner|purifier|electrical)\b|\b(?:filter|fan)\b.{0,100}\b(?:tape|attach|strap|mount|wire|build|construct|assemble)\b/i,
@@ -47,7 +47,7 @@ function isNegated(text: string, index: number): boolean {
     text.lastIndexOf('?', index - 1),
   )
   const clause = text.slice(clauseStart + 1, index)
-  return /\b(?:never|avoid\w*|do not|don't|does not|doesn't|no longer|no|not|without|refrain\w*|instead of|rather than|prohibit\w*)\b/i.test(clause)
+  return /\b(?:never|avoid\w*|do not|don't|does not|doesn't|cannot|can't|will not|won't|should not|shouldn't|must not|no longer|no|not|without|refrain\w*|instead of|rather than|prohibit\w*)\b/i.test(clause)
 }
 
 function hasUnnegatedMatch(pattern: RegExp, text: string): boolean {

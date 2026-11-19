@@ -5,6 +5,7 @@ import { inspectAiText, isChatOutputRelevant, isPlanSectionRelevant } from './ai
 describe('AI output safety and relevance checks', () => {
   it.each([
     'Install an ozone generator in the bedroom.',
+    'Buy two ozone generators for the living room.',
     'Attach a filter to a box fan with tape and run it overnight.',
     'Take medication to treat pollution exposure.',
     'This purifier reduces indoor PM2.5 by 90%.',
@@ -12,6 +13,15 @@ describe('AI output safety and relevance checks', () => {
     'This will immediately lower city AQI by 10 points.',
   ])('rejects unsafe or unsupported output: %s', text => {
     expect(inspectAiText(text, { aqi: 180 }).length).toBeGreaterThan(0)
+  })
+
+  it('allows an explicit refusal of a device the model was asked to recommend', () => {
+    // The exact live answer. "Cannot recommend ozone generators" is a refusal,
+    // and the plural form used to slip past the singular-only pattern.
+    expect(inspectAiText(
+      'I cannot recommend ozone generators as they produce ozone, a harmful lung irritant. Consider HEPA-certified devices instead.',
+      { aqi: 180 },
+    )).toEqual([])
   })
 
   it('allows bounded, cautious advice and rejects irrelevant outputs', () => {
