@@ -63,8 +63,8 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 24 files | 189 tests pass |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 94.88 / 86.36 / 97.61 / 98.23 (stmts/branch/fns/lines) |
+| `npm test` | Vitest, 24 files | 191 tests pass |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 94.77 / 86.14 / 97.67 / 98.03 (stmts/branch/fns/lines) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~408 kB / ~127 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
@@ -245,15 +245,28 @@ Rate limit 20/min/client. Body cap 12 kB. Prompt bounds context and marks user t
 `<user_question>`. Any Gemini error, empty text or invalid shape → deterministic fallback with HTTP 200.
 
 ### `POST /api/plan`
-Request: `{ location, windows:{best,worst}, profile:{…}, deterministicActions ≤10 }`
+Request: `{ location:{city,aqi,category,pm25}, windows:{best,worst}, profile:{adults,children,elderly,outdoorWorker,vulnerable,commute,budget,hasPurifier,roomAreaSqFt} }`
 Response (AI): `{ source:'gemini', greeting, sections[1..8]{title∈enum, guidance 10–600}, sources }`
 Response (no AI): `{ source:'unavailable', sections:[], reason }`
-Rate limit 10/min/client. Body cap 16 kB. Prompt forbids contradicting the deterministic actions.
+Rate limit 10/min/client. Body cap 16 kB. The request schema is `.strict()`: an extra field is a 400 and every
+listed field is required, including `category`, `vulnerable`, `hasPurifier` and `roomAreaSqFt`. There is **no**
+`deterministicActions` field — the handler never consumes it, and the deterministic plan stays client-side.
+Prompt forbids contradicting that plan.
 
 `greeting` is capped at 160 characters. The live model routinely returns ~180, so the handler clamps it at
 a word boundary (`normalizeBrief`) rather than throwing away a brief whose sections are all valid. Section
 titles are **not** relaxed: an unknown title still rejects the whole brief, because a title outside the enum
 means the model invented a section type rather than merely overshooting a length.
+
+Because of that, the prompt must show the model the enum: `allowedTitleList` is interpolated into the system
+instruction **and** the same titles are passed as a `responseSchema` enum (`geminiBriefSchema`). Without both,
+the live model invents headings such as "Current Conditions" and every brief is discarded — a silent 100%
+fallback that unit tests cannot see, because they mock the model. Do not "simplify" the prompt by removing
+the title list. Likewise `inspectAiText()` ignores pattern matches inside a negated clause: the model writes
+"avoid any improvised filtration devices", which the naive match read as a DIY recommendation.
+
+Rejections are logged server-side as `[api/plan] rejected AI brief: [{"title","codes"}]` — title and rule code
+only, never the household profile. Check the deployment logs when the AI brief is missing.
 
 ### `GET /api/aqi`
 Response: `{ available, aqi|null, station|null, distanceKm|null, observedAt|null, provider, reason|null, pollutants[] }`
@@ -382,7 +395,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 135 tests / 22 files)
+- [ ] `npm test` green (currently 191 tests / 24 files)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links

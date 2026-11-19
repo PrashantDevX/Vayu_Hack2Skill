@@ -5,11 +5,15 @@ import { clearRateLimits } from './_lib/rateLimit'
 
 const { generateContent } = vi.hoisted(() => ({ generateContent: vi.fn() }))
 
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: class {
-    models = { generateContent }
-  },
-}))
+vi.mock('@google/genai', async importOriginal => {
+  const actual = await importOriginal<typeof import('@google/genai')>()
+  return {
+    ...actual,
+    GoogleGenAI: class {
+      models = { generateContent }
+    },
+  }
+})
 
 const body = {
   location: { city: 'New Delhi', aqi: 200, category: 'Moderate', pm25: 90 },
@@ -143,10 +147,25 @@ describe('POST /api/plan', () => {
     expect(data.sections).toHaveLength(2)
     expect(data.sources).toEqual(['OPEN_METEO_MODEL', 'CPCB_AQI_METHODOLOGY'])
 
-    const call = generateContent.mock.calls[0]![0] as { contents: string; config: { maxOutputTokens: number; responseMimeType: string } }
+    const call = generateContent.mock.calls[0]![0] as {
+      contents: string
+      config: { maxOutputTokens: number; responseMimeType: string; systemInstruction: string; responseSchema: unknown }
+    }
     expect(call.contents).toContain('New Delhi')
     expect(call.config.responseMimeType).toBe('application/json')
     expect(call.config.maxOutputTokens).toBe(900)
+
+    // The model cannot honour an enum it was never shown. Before this, the
+    // prompt said "one allowed title" and listed none, so every live brief was
+    // rejected for inventing headings such as "Current Conditions".
+    for (const title of [
+      'Morning routine', 'Commute', 'Outdoor activity', 'Indoor environment',
+      'School and children', 'Elderly precautions', 'Evening routine', 'Night-time environment',
+    ]) {
+      expect(call.config.systemInstruction).toContain(`"${title}"`)
+    }
+    expect(JSON.stringify(call.config.responseSchema)).toContain('Morning routine')
+    expect(JSON.stringify(call.config.responseSchema)).toContain('Night-time environment')
   })
 
   it('retries once when Gemini reports high demand and returns the second brief', async () => {

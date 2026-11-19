@@ -37,19 +37,19 @@ Measured 2026-11-19 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 94.80% (986/1,040) | 90% |
-| Branches | 86.24% (790/916) | 78% |
-| Functions | 97.61% (164/168) | 92% |
-| Lines | 98.21% (826/841) | 93% |
+| Statements | 94.77% (1015/1071) | 90% |
+| Branches | 86.14% (821/953) | 78% |
+| Functions | 97.67% (168/172) | 92% |
+| Lines | 98.03% (848/865) | 93% |
 
 Per-module highlights:
 
 | File | Statements | Branches |
 | --- | --- | --- |
-| `api/aqi.ts` | 88.27% | 77.85% |
+| `api/aqi.ts` | 88.43% | 77.46% |
 | `api/chat.ts` | 96.29% | 76.11% |
-| `api/plan.ts` | 92.77% | 88.00% |
-| `api/_lib/aiOutput.ts` | 100% | 62.50% |
+| `api/plan.ts` | 92.04% | 86.00% |
+| `api/_lib/aiOutput.ts` | 96.96% | 64.51% |
 | `api/_lib/requestBody.ts` | 96.29% | 100% |
 | `api/_lib/rateLimit.ts` | 92.85% | 85.36% |
 | `src/services/aqiService.ts` | 92.30% | 76.59% |

@@ -25,25 +25,54 @@ const SAFETY_RULES: readonly { code: AiRejectionCode; pattern: RegExp }[] = [
   { code: 'unsupported_aqi_change', pattern: /(?:\b(?:lower|reduce|improve|change)\b.{0,80}\b(?:city(?:-wide)?\s+)?AQI\b.{0,50}\b(?:by\s+\d|immediately|instantly|exactly)\b|\b(?:immediately|instantly)\b.{0,40}\b(?:lower|reduce|improve|change)\b.{0,40}\bAQI\b)/i },
 ]
 
+/**
+ * Safety rules are enforced on what the model *recommends*, not on what it warns
+ * against. A sentence like "keep windows shut and avoid any improvised filtration
+ * devices" is the behaviour we want, yet the naive pattern match flagged it as an
+ * unsafe DIY recommendation and threw away an otherwise valid brief. Matches are
+ * therefore ignored when a negation cue appears in the same clause.
+ */
+function isNegated(text: string, index: number): boolean {
+  const clauseStart = Math.max(
+    text.lastIndexOf('.', index - 1),
+    text.lastIndexOf(';', index - 1),
+    text.lastIndexOf(':', index - 1),
+    text.lastIndexOf('!', index - 1),
+    text.lastIndexOf('?', index - 1),
+  )
+  const clause = text.slice(clauseStart + 1, index)
+  return /\b(?:never|avoid\w*|do not|don't|does not|doesn't|no longer|no|not|without|refrain\w*|instead of|rather than|prohibit\w*)\b/i.test(clause)
+}
+
+function hasUnnegatedMatch(pattern: RegExp, text: string): boolean {
+  const global = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`)
+  for (let match = global.exec(text); match !== null; match = global.exec(text)) {
+    if (!isNegated(text, match.index)) return true
+    if (match[0].length === 0) global.lastIndex += 1
+  }
+  return false
+}
+
 export function inspectAiText(text: string, context: AiSafetyContext): AiRejectionCode[] {
-  const rejected = SAFETY_RULES.filter(rule => rule.pattern.test(text)).map(rule => rule.code)
+  const rejected = SAFETY_RULES.filter(rule => hasUnnegatedMatch(rule.pattern, text)).map(rule => rule.code)
   if (
     context.aqi !== null && context.aqi > 100 &&
     /\b(?:open|keep open|leave open)\b.{0,35}\bwindows?\b/i.test(text) &&
-    !/\b(?:cleaner|lower|better|less polluted) (?:forecast )?window\b/i.test(text)
+    !/\b(?:cleaner|lower|better|less polluted) (?:forecast )?window\b/i.test(text) &&
+    !isNegated(text, text.search(/\b(?:open|keep open|leave open)\b.{0,35}\bwindows?\b/i))
   ) rejected.push('blind_ventilation')
   return rejected
 }
 
 const PLAN_TITLE_INTENTS: Record<string, RegExp> = {
-  'Morning routine': /morning|window|ventilat|indoor|pollut/i,
-  Commute: /commut|metro|bus|carpool|travel|route|traffic/i,
-  'Outdoor activity': /outdoor|exercise|activity|exertion|pollut/i,
-  'Indoor environment': /indoor|source|filter|purifier|cooking|ventilat/i,
-  'School and children': /school|child|student|play|travel/i,
-  'Elderly precautions': /older|elderly|senior|exertion|errand|activity/i,
-  'Evening routine': /evening|window|ventilat|forecast|pollut/i,
-  'Night-time environment': /night|sleep|indoor|filter|purifier|source/i,
+  'Morning routine': /morning|window|ventilat|air out|airing|indoor|pollut|routine|wake/i,
+  Commute: /commut|metro|bus|carpool|travel|route|traffic|transport|school run/i,
+  'Outdoor activity': /outdoor|outside|exercise|activity|exertion|pollut|run|jog|walk|play/i,
+  'Indoor environment': /indoor|source|filter|purifier|cooking|ventilat|window|air out|airing|damp|mop|dust|home/i,
+  'School and children': /school|child|student|play|travel|kid|family/i,
+  'Elderly precautions': /older|elderly|senior|exertion|errand|activity|grandparent|rest/i,
+  'Evening routine': /evening|window|ventilat|forecast|pollut|dinner|cook|night|sunset/i,
+  'Night-time environment': /night|sleep|bedroom|indoor|filter|purifier|source|window|ventilat/i,
 }
 
 export function isPlanSectionRelevant(title: string, guidance: string): boolean {

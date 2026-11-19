@@ -12,7 +12,11 @@ On absent credentials, provider failure, empty or malformed output, unsafe text 
 
 ## Daily plan contract
 
-`POST /api/plan` accepts strict location, forecast-window and household preference schemas. Browser-provided deterministic action text is no longer accepted or sent to Gemini. The model returns only a greeting and sections whose titles belong to a closed enum. Each guidance section is checked for unsafe or unsupported medical, ozone, improvised electrical filtration, pollutant-reduction percentage, city-AQI and ventilation advice, and for relevance to its section title. Any failure returns an explicit unavailable brief; the deterministic plan stays visible.
+`POST /api/plan` accepts strict location, forecast-window and household preference schemas. Browser-provided deterministic action text is not accepted or sent to Gemini, and the request schema is `.strict()` — an unexpected field is a `400`. The model returns only a greeting and sections whose titles belong to a closed enum.
+
+The prompt lists all eight allowed titles verbatim **and** constrains them with a structured `responseSchema` enum. Both are required: the earlier prompt said "one allowed title" without ever naming one, so the live model invented plausible headings such as "Current Conditions" and every brief was discarded by the enum. The enum itself is unchanged — a title outside it still rejects the brief.
+
+Each guidance section is checked for unsafe or unsupported medical, ozone, improvised electrical filtration, pollutant-reduction percentage, city-AQI and ventilation advice, and for relevance to its section title. Safety patterns ignore matches inside a negated clause, so "avoid any improvised filtration device" is accepted while "attach a filter to a fan" is rejected. Rejections are logged server-side with the section title and rule code (never the household profile). Any failure returns an explicit unavailable brief; the deterministic plan stays visible.
 
 Greeting text may be up to 600 characters from the model and is safely clamped to 160 at a word boundary. Body reads are capped at 16 kB. Sources are derived by the server from the actual environmental context and mapped to trusted metadata in `src/constants/sources.ts`.
 

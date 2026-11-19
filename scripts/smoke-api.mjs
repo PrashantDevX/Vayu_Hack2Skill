@@ -44,14 +44,27 @@ const chatBody = JSON.stringify({
   forecast: { category: 'Moderate', bestWindow: '14:00', worstWindow: '21:00' },
 })
 
+// Must match the `.strict()` request schema in api/plan.ts exactly: an extra
+// field is a 400, and every listed field is required. The deterministic actions
+// are not sent — the handler only ever consumes location/windows/profile, and
+// the client (src/services/planService.ts) sends the same shape.
 const planBody = JSON.stringify({
-  location: { city: 'New Delhi', aqi: 180, pm25: 90 },
+  location: { city: 'New Delhi', aqi: 180, category: 'Moderate', pm25: 90 },
   windows: {
     best: { start: '14:00', end: '16:00', averageAqi: 150, averagePm25: 70 },
     worst: { start: '20:00', end: '22:00', averageAqi: 220, averagePm25: 120 },
   },
-  profile: { adults: 2, children: 1, elderly: 0, commute: 'Metro', budget: 'Free' },
-  deterministicActions: [{ id: 'ventilate-1400', title: 'Ventilate at 14:00' }],
+  profile: {
+    adults: 2,
+    children: 1,
+    elderly: 0,
+    outdoorWorker: false,
+    vulnerable: false,
+    commute: 'Metro',
+    budget: 'Free',
+    hasPurifier: false,
+    roomAreaSqFt: 180,
+  },
 })
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
