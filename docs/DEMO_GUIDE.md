@@ -152,7 +152,7 @@ it reaches the DOM."
 - CPCB methodology implemented and tested, including the coverage rule.
 - Model vs official separation that survives on screen.
 - AI that is validated, rate-limited and optional.
-- 191 tests, coverage gate, clean typecheck and lint, production build.
+- 195 tests, coverage gate, clean typecheck and lint, production build.
 
 ---
 

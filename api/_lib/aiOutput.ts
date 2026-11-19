@@ -6,6 +6,7 @@ export type AiRejectionCode =
   | 'unsafe_diy_filtration'
   | 'medical_treatment'
   | 'unsupported_reduction'
+  | 'unsupported_emission'
   | 'blind_ventilation'
   | 'unsupported_aqi_change'
   | 'irrelevant'
@@ -22,6 +23,11 @@ const SAFETY_RULES: readonly { code: AiRejectionCode; pattern: RegExp }[] = [
   },
   { code: 'medical_treatment', pattern: /\b(?:diagnos(?:e|is)|prescrib(?:e|ing)|medication|medicine|drug dosage|dose of)\b/i },
   { code: 'unsupported_reduction', pattern: /(?:\b\d+(?:\.\d+)?\s?%\b.{0,80}\b(?:pollut|PM\s?2\.5|indoor air|reduc|remov|improv)|\b(?:pollut|PM\s?2\.5|indoor air)\b.{0,80}\b\d+(?:\.\d+)?\s?%)/i },
+  // Emissions arithmetic belongs to src/utils/impact.ts, which applies the
+  // published per-km factors and shows a ±20% band. The live model answered
+  // "how much CO2 do I save by cycling 10 km?" with an invented range, which is
+  // exactly the kind of number rule 5 forbids it to produce.
+  { code: 'unsupported_emission', pattern: /(?:\b(?:co2e?|carbon dioxide|carbon footprint|greenhouse gas)\b.{0,80}\b\d+(?:\.\d+)?\s*(?:kg|kilograms?|tonnes?|tons?)\b|\b\d+(?:\.\d+)?\s*(?:kg|kilograms?|tonnes?|tons?)\b.{0,80}\b(?:co2e?|carbon dioxide|carbon footprint|greenhouse gas)\b)/i },
   { code: 'unsupported_aqi_change', pattern: /(?:\b(?:lower|reduce|improve|change)\b.{0,80}\b(?:city(?:-wide)?\s+)?AQI\b.{0,50}\b(?:by\s+\d|immediately|instantly|exactly)\b|\b(?:immediately|instantly)\b.{0,40}\b(?:lower|reduce|improve|change)\b.{0,40}\bAQI\b)/i },
 ]
 

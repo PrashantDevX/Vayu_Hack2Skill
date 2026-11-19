@@ -8,7 +8,9 @@ Gemini provides optional explanations and daily brief wording. Deterministic Typ
 
 The handler sends system instructions separately from JSON-serialized context. User text is data, not prompt structure, and no XML delimiter is treated as a security boundary. Gemini may return only a short answer. Zod validates shape; deterministic relevance and safety checks reject unrelated or unsafe text. The response includes `source: "gemini" | "fallback"`, answer, and server-selected source IDs. Gemini cannot supply citations.
 
-On absent credentials, provider failure, empty or malformed output, unsafe text or intent mismatch, the endpoint uses the shared intent-based deterministic fallback. It handles exercise, purifier/CADR, ventilation, children/school, elderly members, commute, masks, severe pollution, exposure, indoor sources, impact claims, and unrelated questions. The browser validates the response again and preserves its actual source label.
+On absent credentials, provider failure, empty or malformed output, unsafe text or intent mismatch, the endpoint uses the shared intent-based deterministic fallback. It handles exercise, purifier/CADR, ventilation, children/school, elderly members, commute, masks, severe pollution, exposure, indoor sources, impact claims, definitions, ambient conditions, pregnancy, outdoor workers, medical questions, ozone/ioniser devices and unrelated questions. The browser validates the response again and preserves its actual source label.
+
+Two rules are enforced in the deterministic path as well as on model output. Requests for an ozone generator or ioniser get an explicit refusal rather than a topic menu, because that is a safety question, not small talk. Requests for a numeric emissions saving are answered by naming the Impact simulator, which applies the published per-km factors with a ±20% band — the assistant itself never does the arithmetic.
 
 ## Daily plan contract
 

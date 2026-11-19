@@ -37,7 +37,7 @@ deployed Vercel project; without them the UI shows explicit "unavailable" states
 ```bash
 npm run typecheck      # tsc -b (app + node + api projects)
 npm run lint           # oxlint, zero warnings
-npm test               # 191 tests, 24 files
+npm test               # 195 tests, 24 files
 npm run test:coverage   # v8 coverage with enforced thresholds
 npm run build          # production build
 npm run check:providers # probe Gemini + data.gov.in with your .env keys
@@ -174,10 +174,10 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ```
 Test Files  24 passed (24)
-Tests      191 passed (191)
+Tests      195 passed (195)
 
 Coverage (v8, utils/services/constants/api):
-Statements  94.77%   Branches 86.14%   Functions 97.67%   Lines 98.03%
+Statements  94.78%   Branches 86.17%   Functions 97.67%   Lines 98.03%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -266,7 +266,7 @@ Each requirement from the brief, and where it lives.
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
 | Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~404 kB raw / ~126 kB gzip |
 | Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion |
-| Testing: AQI, recommendations, direct fallback, impact maths | 191 tests; see `docs/TESTING.md` |
+| Testing: AQI, recommendations, direct fallback, impact maths | 195 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 

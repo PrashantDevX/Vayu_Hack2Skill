@@ -23,6 +23,17 @@ describe('AI output safety and relevance checks', () => {
     expect(isChatOutputRelevant('How should I commute?', 'Use a purifier in the bedroom.')).toBe(false)
   })
 
+  it('rejects emissions arithmetic the model is not allowed to perform', () => {
+    // The exact live answer to "how much CO2 do I save by cycling 10 km?".
+    expect(inspectAiText(
+      'Cycling 10 km instead of driving a petrol car typically saves about 1.5 to 2.3 kilograms of CO2 emissions.',
+      { aqi: 180 },
+    )).toContain('unsupported_emission')
+    // Naming the metric without a number is fine.
+    expect(inspectAiText('Vayu computes CO2e savings in the Impact simulator from per-km factors.', { aqi: 180 }))
+      .toEqual([])
+  })
+
   it('does not treat a warning against an unsafe action as the recommendation itself', () => {
     // These are the exact sentences the live model produced. Each one was
     // previously rejected, discarding an otherwise valid daily brief.

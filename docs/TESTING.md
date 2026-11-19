@@ -37,10 +37,10 @@ Measured 2026-11-19 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 94.77% (1015/1071) | 90% |
-| Branches | 86.14% (821/953) | 78% |
+| Statements | 94.78% (1017/1073) | 90% |
+| Branches | 86.17% (823/955) | 78% |
 | Functions | 97.67% (168/172) | 92% |
-| Lines | 98.03% (848/865) | 93% |
+| Lines | 98.03% (849/866) | 93% |
 
 Per-module highlights:
 

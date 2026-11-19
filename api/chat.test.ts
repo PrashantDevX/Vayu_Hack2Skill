@@ -73,7 +73,11 @@ describe('POST /api/chat', () => {
     const result = await response.json() as { source: string; answer: string; sources: string[] }
     expect(result.source).toBe('fallback')
     expect(result.answer.toLowerCase()).toContain(String(expected).toLowerCase())
-    expect(result.answer).not.toMatch(/ozone generator|DIY box.fan|MERV|diagnose|prescribe|\d+%/i)
+    // Reduction *claims* are forbidden. Naming an unsupported target in order to
+    // refuse it ("treat any 90% target as unsupported") and the impact
+    // simulator's ±20% uncertainty band are both allowed.
+    expect(result.answer).not.toMatch(/ozone generator|DIY box.fan|MERV|diagnose|prescribe/i)
+    expect(result.answer).not.toMatch(/(?:reduc\w*|remov\w*|improv\w*|lower\w*)\D{0,20}\d+\s?%\d+\s?%\s*(?:reduction|less|fewer|lower|improvement)/i)
     expect(result.sources).toContain('OPEN_METEO_MODEL')
     expect(result.sources).toContain('CPCB_AQI_METHODOLOGY')
   })

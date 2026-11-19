@@ -63,8 +63,8 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 24 files | 191 tests pass |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 94.77 / 86.14 / 97.67 / 98.03 (stmts/branch/fns/lines) |
+| `npm test` | Vitest, 24 files | 195 tests pass |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 94.78 / 86.17 / 97.67 / 98.03 (stmts/branch/fns/lines) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~408 kB / ~127 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
@@ -244,6 +244,15 @@ Response: `{ answer: 1–1800 chars, sources: string[] ≤5 }`
 Rate limit 20/min/client. Body cap 12 kB. Prompt bounds context and marks user text as untrusted inside
 `<user_question>`. Any Gemini error, empty text or invalid shape → deterministic fallback with HTTP 200.
 
+If `classifyChatIntent()` returns `unknown`, Gemini is **not called at all** — the deterministic refusal
+answers. That is deliberate (cost, and no model gets to answer an out-of-scope question), but it means a new
+legitimate question type stays unrouted until it is added to the classifier. Every added intent needs an entry
+in both `answers` and `INTENT_TERMS` (the compiler enforces it).
+
+`inspectAiText()` rejects, among other things, any numeric CO₂/emissions figure: per-km factors live in
+`src/utils/impact.ts` and the model must not do that arithmetic. The rule matches numbers, not the word, so
+"Vayu computes CO₂e in the Impact simulator" is allowed while "saves about 2.3 kilograms of CO2" is not.
+
 ### `POST /api/plan`
 Request: `{ location:{city,aqi,category,pm25}, windows:{best,worst}, profile:{adults,children,elderly,outdoorWorker,vulnerable,commute,budget,hasPurifier,roomAreaSqFt} }`
 Response (AI): `{ source:'gemini', greeting, sections[1..8]{title∈enum, guidance 10–600}, sources }`
@@ -395,7 +404,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 191 tests / 24 files)
+- [ ] `npm test` green (currently 195 tests / 24 files)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links

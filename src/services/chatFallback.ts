@@ -19,7 +19,7 @@ export interface ChatContext {
 export type ChatIntent =
   | 'exercise' | 'purifier' | 'ventilation' | 'children' | 'elderly' | 'commute'
   | 'mask' | 'severe' | 'exposure' | 'indoor' | 'impact'
-  | 'ambient' | 'definition' | 'pregnancy' | 'worker' | 'medical'
+  | 'ambient' | 'definition' | 'pregnancy' | 'worker' | 'medical' | 'device'
   | 'unknown'
 
 /**
@@ -41,34 +41,40 @@ export function classifyChatIntent(question: string): ChatIntent {
   // 2. Requests for personal medical judgement get an explicit safe refusal.
   if (/(diagnos|prescrib|medicine|medication|inhaler|tablet|syrup|dose|dosage|asthma attack|chest pain|symptom)/.test(q)) return 'medical'
 
-  // 3. Emission, offset and city-scale impact claims.
+  // 3. Ozone-producing devices. These must be refused explicitly rather than
+  //    deflected with a topic menu, and they precede `purifier` because the
+  //    question often contains the word "purifier".
+  if (/(ozone|ozoniser|ozonizer|ioniser|ionizer)/.test(q)) return 'device'
+
+  // 4. Emission, offset and city-scale impact claims.
   if (/(immediately|exact (?:amount|number)|lower (?:the )?(?:city )?aqi|change (?:the )?aqi|emission|carbon|co2|impact simulator|offset|footprint)/.test(q)) return 'impact'
 
-  // 4. Definitions of a pollutant or of the index itself.
+  // 5. Definitions of a pollutant or of the index itself.
   if (/(what (?:is|does|are) [^?]{0,24}\b(?:pm\s?2\.5|pm\s?10|pm25|pm10|aqi|no2|nitrogen dioxide|so2|sulphur dioxide|ozone|o3|nh3|carbon monoxide)\b|meaning of (?:pm|aqi)|\bwhat does (?:pm|aqi)\b)/.test(q)) return 'definition'
 
-  // 5. Ambient "how is the air right now" — the most common opening question.
+  // 6. Ambient "how is the air right now" — the most common opening question.
   if (/(what(?:'s| is) the (?:air quality|aqi|pollution(?: level)?)|how (?:is|are) the air|air quality (?:right now|today|currently)|current (?:air quality|aqi|pollution)|pollution level|is the air (?:bad|clean|safe) (?:today|right now)|how bad is the air)/.test(q)) return 'ambient'
 
-  // 6. Vulnerable groups that the profile does not model as a field.
+  // 7. Vulnerable groups that the profile does not model as a field.
   if (/\b(?:pregnan\w*|expecting a baby|first trimester|second trimester|third trimester)\b/.test(q)) return 'pregnancy'
   if (/\b(?:outdoor worker|work outside|work outdoors|delivery (?:rider|driver)|construction (?:worker|site)|traffic police|security guard|courier|field work)\b/.test(q)) return 'worker'
 
-  // 7. Time-outdoors questions are exposure questions, not exercise questions.
+  // 8. Time-outdoors questions are exposure questions, not exercise questions.
   if (/(exposure|inhaled|breathe|breathing rate|how (?:long|many hours) [^?]{0,24}(?:outside|outdoors|stay out))/.test(q)) return 'exposure'
 
-  // 8. Household-specific intents. Children before commute so "child travel to
+  // 9. Household-specific intents. Children before commute so "child travel to
   //    school" is treated as a children question, not a commute question.
   if (/(child|children|school|kid|baby|student)/.test(q)) return 'children'
   if (/(elderly|older adult|senior|grandparent)/.test(q)) return 'elderly'
   if (/(mask|n95|n-95|ffp2|respirator)/.test(q)) return 'mask'
 
-  // 9. Word-boundary matching. The old patterns matched "open" inside
-  //    "open source" and "run" inside "running late".
+  // 10. Word-boundary matching. The old patterns matched "open" inside
+  //     "open source" and "run" inside "running late".
   if (/\b(?:windows?|ventilat\w*|airing|air out)\b/.test(q)) return 'ventilation'
   if (/(purifier|filter|hep|cadr|air cleaner)/.test(q)) return 'purifier'
   if (/\b(?:commute|metro|bus|carpool|drive|car|two-wheeler|cycling to work|travel)\b/.test(q)) return 'commute'
-  if (/(cooking|indoor source|indoor air|incense|smok|dust|mop|source control)/.test(q)) return 'indoor'
+  // "reduce indoor PM2.5 by 90%" is a source-control question, not small talk.
+  if (/(cooking|indoor source|indoor air|indoor pm|indoor pollut|incense|smok|dust|mop|source control)/.test(q)) return 'indoor'
   if (/(severe|emergency|aqi 400|hazard)/.test(q)) return 'severe'
   if (/\b(?:run|running|jog|jogging|exercise|work\s?out|cycling|walk|walking|outside|outdoor)\b/.test(q)) return 'exercise'
 
@@ -125,8 +131,9 @@ export function fallbackChatAnswer(question: string, context: ChatContext): Chat
       ? `For ${aqi}, keep outdoor time short, avoid strenuous activity, and follow current local public-health instructions. Do not treat this model estimate as an official station reading.${window}`
       : `Live model air-quality data is unavailable, so I cannot confirm a severe reading. Keep outdoor time short where conditions look poor and follow current local public-health instructions.${window}`,
     exposure: `Exposure depends on both concentration and time outdoors. Vayu can show a PM2.5 concentration-time proxy when hourly data is available; it is not inhaled dose or medical risk. There is no safe fixed number of outdoor hours, so shorten time outdoors when ${hasAqi ? `the estimate is ${context.aqi}` : 'readings are elevated'} and use the cleaner window where you can.${window}`,
-    indoor: 'Use kitchen exhaust during cooking, avoid indoor smoking and unnecessary combustion, and damp-dust rather than dry-sweep. These are source-control steps; no indoor concentration reduction is predicted.',
-    impact: 'A transport choice can change estimated personal transport emissions under the simulator assumptions. It does not produce an immediate city-wide AQI change, and Vayu does not invent a precise AQI reduction.',
+    indoor: 'Use kitchen exhaust during cooking, avoid indoor smoking and unnecessary combustion, and damp-dust rather than dry-sweep. These are source-control steps. Vayu does not predict a percentage reduction in indoor concentration, so treat any specific "cut it by 90%" target as unsupported.',
+    impact: 'A transport choice changes your estimated personal transport emissions, and Vayu computes that in the Impact simulator from the published per-km factors with a ±20% band. Chat does not do the arithmetic and does not invent a figure. A mode shift does not produce an immediate city-wide AQI change.',
+    device: 'Do not use an ozone generator or an ioniser that intentionally produces ozone. Ozone is an airway irritant, and it does not remove particles from indoor air. For particles, mechanical filtration through a certified HEPA unit is the appropriate approach, sized to the room, and source control comes first. This is general environmental-health information, not a product recommendation.',
     medical: 'I cannot offer personal medical advice or assess symptoms. For breathing difficulty, chest pain or a persistent cough, contact a qualified clinician. For air-quality decisions I can help with exposure timing, indoor source control and mask fit.',
     unknown: `I can help with air quality, exposure planning, indoor sources, family precautions, commute choices, or estimated transport impacts. Right now ${aqi}${context.bestWindow ? `, and the lower-forecast window is ${context.bestWindow}` : ''}. Ask about one of those topics and I will use the available local context.`,
   }
@@ -155,7 +162,8 @@ const INTENT_TERMS: Record<Exclude<ChatIntent, 'unknown'>, RegExp> = {
   severe: /outdoor|strenuous|pollution|local|AQI/i,
   exposure: /exposure|concentration|time|dose|PM\s?2\.5/i,
   indoor: /indoor|cooking|source|dust|smok|exhaust/i,
-  impact: /transport|emission|AQI|city-wide|impact/i,
+  impact: /transport|emission|CO₂e|CO2|city-wide|impact|simulator|AQI/i,
+  device: /ozone|ionis|ioniz|HEPA|filter/i,
 }
 
 export function isChatAnswerRelevant(question: string, answer: string): boolean {

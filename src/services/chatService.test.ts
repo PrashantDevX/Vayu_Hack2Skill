@@ -83,6 +83,27 @@ describe('deterministic chat fallback', () => {
     expect(worker.answer).toContain('task rotation')
   })
 
+  it('refuses ozone devices explicitly instead of showing a topic menu', () => {
+    const answer = fallbackChatAnswer('Can you recommend an ozone generator?', context)
+    expect(answer.answer).toContain('Do not use an ozone generator')
+    expect(answer.answer).toContain('HEPA')
+    expect(answer.answer).not.toContain('I can help with air quality')
+  })
+
+  it('answers source-control questions and refuses invented reduction targets', () => {
+    const answer = fallbackChatAnswer('How do I reduce indoor PM2.5 by 90%?', context)
+    expect(answer.answer).toContain('source-control')
+    expect(answer.answer).toContain('90%')
+    expect(answer.answer).toContain('unsupported')
+    expect(answer.answer).not.toContain('I can help with air quality')
+  })
+
+  it('sends emissions arithmetic to the simulator instead of inventing a figure', () => {
+    const answer = fallbackChatAnswer('How much CO2 do I save by cycling 10 km?', context)
+    expect(answer.answer).toContain('simulator')
+    expect(answer.answer).not.toMatch(/\d+(?:\.\d+)?\s*(?:kg|kilograms?)/i)
+  })
+
   it('keeps out-of-scope and medical questions out of the pollution advice path', () => {
     const movie = fallbackChatAnswer('Recommend a movie.', context)
     expect(movie.answer).toContain('I can help with air quality')
