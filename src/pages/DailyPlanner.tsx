@@ -12,6 +12,10 @@ export default function DailyPlanner() {
   const [brief, setBrief] = useState<AiBrief | null>(null)
   const [briefLoading, setBriefLoading] = useState(false)
 
+  const completed = planner.recommendations.filter(item => checklist.includes(item.id)).length
+  const total = planner.recommendations.length
+  const progress = total === 0 ? 0 : (completed / total) * 100
+
   const generateBrief = async () => {
     setBriefLoading(true)
     refresh()
@@ -41,58 +45,43 @@ export default function DailyPlanner() {
           <h1>Daily planner</h1>
           <p>Actions adapted to the current model forecast and your saved household preferences.</p>
         </div>
-        <button type="button" className="secondary-button" onClick={generateBrief} disabled={briefLoading}>
-          <RefreshCw size={16} className={briefLoading ? 'spin' : ''} aria-hidden="true" />
-          {briefLoading ? 'Generating…' : 'Refresh plan'}
+        <button type="button" className="secondary-button" onClick={refresh} disabled={air.refreshing}>
+          <RefreshCw size={16} className={air.refreshing ? 'spin' : ''} aria-hidden="true" />
+          {air.refreshing ? 'Refreshing…' : 'Refresh data'}
         </button>
       </div>
 
-      <div className="planner-context">
-        <p>{planner.contextSummary}</p>
-        <div className="planner-windows">
-          <div><small>Cleaner window</small><strong>{planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : 'Unavailable'}</strong></div>
-          <div><small>Higher-pollution window</small><strong>{planner.worstWindow ? `${planner.worstWindow.start}–${planner.worstWindow.end}` : 'Unavailable'}</strong></div>
-          <div><small>Plan generated</small><strong>{formatRelativeTime(planner.generatedAt)}</strong></div>
-        </div>
-      </div>
-
-      <section className="brief-card" aria-labelledby="brief-heading">
-        <div className="card-heading">
-          <div>
-            <small>OPTIONAL GEMINI BRIEF</small>
-            <h2 id="brief-heading">AI daily brief</h2>
+      {/* The deterministic plan is the product. It comes first; the AI brief is
+          optional wording on top of it and sits further down the page. */}
+      <section className="plan-summary" aria-labelledby="plan-summary-heading">
+        <div className="plan-summary-main">
+          <p className="eyebrow">TODAY&apos;S PLAN</p>
+          <h2 id="plan-summary-heading">
+            {total === 0
+              ? 'No actions are generated until provider data is usable'
+              : completed === total
+                ? `All ${total} actions done for today`
+                : `${completed} of ${total} actions done`}
+          </h2>
+          <p>{planner.contextSummary}</p>
+          <div className="plan-progress-track" aria-hidden="true">
+            <span style={{ width: `${progress}%` }} />
           </div>
-          <button type="button" className="secondary-button" onClick={generateBrief} disabled={briefLoading}>
-            <Sparkles size={16} aria-hidden="true" /> {briefLoading ? 'Working…' : brief ? 'Regenerate brief' : 'Generate brief'}
-          </button>
         </div>
-        {brief === null && (
-          <p className="empty-copy">
-            The deterministic plan below is always available. Generate an AI brief to add a short, validated
-            explanation based on the same provider data; the AI never calculates AQI or emission numbers.
-          </p>
-        )}
-        {brief?.source === 'unavailable' && (
-          <p className="empty-copy" role="status">{brief.reason ?? 'AI brief is unavailable. The deterministic plan remains active.'}</p>
-        )}
-        {brief?.source === 'gemini' && (
-          <>
-            {brief.greeting && <p className="brief-greeting">{brief.greeting}</p>}
-            <div className="brief-sections">
-              {brief.sections.map(section => (
-                <div key={section.title}>
-                  <h3>{section.title}</h3>
-                  <p>{section.guidance}</p>
-                </div>
-              ))}
-            </div>
-            {brief.sources.length > 0 && <p className="data-note">Sources: {brief.sources.map((id, index) => {
-              const source = SOURCE_METADATA[id]
-              return <span key={id}>{index > 0 ? ' · ' : ''}<a href={source.url} target={source.url.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{source.name}</a></span>
-            })}</p>}
-            <p className="data-note">AI explanations are validated for shape and length, but they are not a substitute for the deterministic plan or medical advice.</p>
-          </>
-        )}
+        <dl className="plan-summary-windows">
+          <div>
+            <dt>Cleaner window</dt>
+            <dd>{planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : 'Unavailable'}</dd>
+          </div>
+          <div>
+            <dt>Higher-pollution window</dt>
+            <dd>{planner.worstWindow ? `${planner.worstWindow.start}–${planner.worstWindow.end}` : 'Unavailable'}</dd>
+          </div>
+          <div>
+            <dt>Plan generated</dt>
+            <dd>{formatRelativeTime(planner.generatedAt)}</dd>
+          </div>
+        </dl>
       </section>
 
       <div className="planner-layout">
@@ -103,6 +92,13 @@ export default function DailyPlanner() {
               <h2 id="actions-heading">{planner.recommendations.length} recommended actions</h2>
             </div>
           </div>
+
+          {total === 0 && (
+            <p className="empty-copy" role="status">
+              The forecast series is too incomplete to build a plan. Nothing is invented to fill the gap; refresh once
+              provider data returns.
+            </p>
+          )}
 
           {planner.recommendations.map(item => {
             const checked = checklist.includes(item.id)
@@ -164,6 +160,47 @@ export default function DailyPlanner() {
           </p>
         </aside>
       </div>
+
+      {/* Optional AI wording on top of the plan above. Deliberately below it: the
+          deterministic plan is authoritative even when Gemini is configured. */}
+      <section className="brief-card" aria-labelledby="brief-heading">
+        <div className="card-heading">
+          <div>
+            <small>OPTIONAL GEMINI BRIEF</small>
+            <h2 id="brief-heading">AI daily brief</h2>
+          </div>
+          <button type="button" className="secondary-button" onClick={generateBrief} disabled={briefLoading}>
+            <Sparkles size={16} aria-hidden="true" /> {briefLoading ? 'Working…' : brief ? 'Regenerate brief' : 'Generate brief'}
+          </button>
+        </div>
+        {brief === null && (
+          <p className="empty-copy">
+            Add a short, validated explanation based on the same provider data. The plan above already works without
+            it, and the AI never calculates AQI or emission numbers.
+          </p>
+        )}
+        {brief?.source === 'unavailable' && (
+          <p className="empty-copy" role="status">{brief.reason ?? 'AI brief is unavailable. The deterministic plan remains active.'}</p>
+        )}
+        {brief?.source === 'gemini' && (
+          <>
+            {brief.greeting && <p className="brief-greeting">{brief.greeting}</p>}
+            <div className="brief-sections">
+              {brief.sections.map(section => (
+                <div key={section.title}>
+                  <h3>{section.title}</h3>
+                  <p>{section.guidance}</p>
+                </div>
+              ))}
+            </div>
+            {brief.sources.length > 0 && <p className="data-note">Sources: {brief.sources.map((id, index) => {
+              const source = SOURCE_METADATA[id]
+              return <span key={id}>{index > 0 ? ' · ' : ''}<a href={source.url} target={source.url.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{source.name}</a></span>
+            })}</p>}
+            <p className="data-note">AI explanations are validated for shape and length, but they are not a substitute for the deterministic plan or medical advice.</p>
+          </>
+        )}
+      </section>
     </div>
   )
 }

@@ -110,6 +110,14 @@ The dashboard is ordered by decision value, not by data type: priority headline 
 the three actions → household reasoning → the raw pollutant/weather cards → provenance. The number is evidence
 for the advice, never the headline.
 
+The same rule applies on the other routes. `AirQuality` opens with a "what this means today" band before the
+AQI card, and the official-observation card stays a separate section below it. `DailyPlanner` shows the
+deterministic plan (with progress) first and the optional Gemini brief last, because the plan is authoritative
+and the brief is wording on top of it — an empty "generate brief" card at the top of the page inverted that.
+`IndoorAir` states the short answer (source control first, sized CADR for this room) above the configurator.
+`FamilyProtection` sorts household-applicable groups ahead of general guidance, and `AIAdvisor` sends a
+suggested question on the first tap instead of only filling the input.
+
 ### 2.6 Edge functions — `api/`
 
 All four handlers use the Web `Request`/`Response` API and export

@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext'
 import { BUDGET_BANDS } from '../constants/aqi'
 import { budgetRank, estimateCadr } from '../utils/impact'
 import type { BudgetBand } from '../types'
-
 interface IndoorAction {
   title: string
   timing: string
@@ -84,6 +83,37 @@ export default function IndoorAir() {
           <p>Source control first, then appropriately sized filtration. No ozone devices, no unsafe DIY.</p>
         </div>
       </div>
+
+      <section className="indoor-summary" aria-labelledby="indoor-summary-heading">
+        <div>
+          <p className="eyebrow">THE SHORT ANSWER</p>
+          <h2 id="indoor-summary-heading">
+            Start with free source control; size any purifier to this room
+          </h2>
+          <p>
+            Damp-dusting, kitchen exhaust and avoiding indoor combustion cost nothing and come first. Only then does
+            filtration help — and only when the unit is rated for the space.
+          </p>
+        </div>
+        <ul className="hero-chips" aria-label="Room sizing result">
+          <li>
+            <small>Suggested CADR</small>
+            <strong>{cadr.cadrM3hLow}–{cadr.cadrM3hHigh} m³/h</strong>
+          </li>
+          <li>
+            <small>Room volume</small>
+            <strong>{cadr.volumeM3} m³</strong>
+          </li>
+          <li>
+            <small>Air changes/hour</small>
+            <strong>{cadr.achLow}–{cadr.achHigh}</strong>
+          </li>
+          <li>
+            <small>Budget</small>
+            <strong>{budget}</strong>
+          </li>
+        </ul>
+      </section>
 
       <div className="indoor-layout">
         <section className="room-card" aria-labelledby="room-heading">

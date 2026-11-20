@@ -4,11 +4,12 @@ import { useApp } from '../context/AppContext'
 import { CATEGORY_SUMMARY } from '../constants/aqi'
 
 export default function FamilyProtection() {
-  const { air, profile } = useApp()
+  const { air, profile, planner } = useApp()
   const assessment = air.data?.model.assessment
   const category = assessment?.category ?? null
   const elevated = assessment?.aqi !== null && assessment?.aqi !== undefined && assessment.aqi > 100
   const severe = assessment?.aqi !== null && assessment?.aqi !== undefined && assessment.aqi > 300
+  const cleanerWindow = planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : null
 
   const groups = [
     {
@@ -73,19 +74,20 @@ export default function FamilyProtection() {
         <ShieldCheck size={25} aria-hidden="true" />
         <div>
           <strong>
-            {assessment?.aqi !== null && assessment?.aqi !== undefined
-              ? `${category}: ${CATEGORY_SUMMARY[category ?? 'Moderate']}`
+            {assessment?.aqi !== null && assessment?.aqi !== undefined && category
+              ? `${category}: ${CATEGORY_SUMMARY[category]}`
               : 'AQI unavailable: use general precautions and recheck provider data.'}
           </strong>
           <p>
-            Current estimated model AQI: {assessment?.aqi ?? 'unavailable'}. Guidance below uses the household profile
-            and public-health precautions, not individual medical assessment.
+            Current estimated model AQI: {assessment?.aqi ?? 'unavailable'}.
+            {cleanerWindow ? ` The relatively cleaner window is ${cleanerWindow}.` : ' No cleaner window could be identified from the hourly series.'}{' '}
+            Guidance below uses the household profile and public-health precautions, not individual medical assessment.
           </p>
         </div>
       </div>
 
       <div className="family-grid">
-        {groups.map(({ title, icon: Icon, applies, text }) => (
+        {[...groups].sort((a, b) => Number(b.applies) - Number(a.applies)).map(({ title, icon: Icon, applies, text }) => (
           <section key={title} className={applies ? 'applies' : ''}>
             <div className="family-icon"><Icon size={21} aria-hidden="true" /></div>
             <small>{applies ? 'IN YOUR HOUSEHOLD' : 'GENERAL GUIDANCE'}</small>

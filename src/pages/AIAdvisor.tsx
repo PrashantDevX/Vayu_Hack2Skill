@@ -20,6 +20,10 @@ export default function AIAdvisor() {
     {
       role: 'assistant',
       text: 'I can help with today’s pollution, commute choices, indoor air and family precautions. I use the current model data and your saved preferences. I will say when data is unavailable.',
+      // The opening message is static server-independent copy, but it is still
+      // deterministic Vayu text rather than model output, and the provenance
+      // badge is deliberately shown for every assistant message including this
+      // one (see App.test.tsx).
       source: 'fallback',
     },
   ])
@@ -28,9 +32,9 @@ export default function AIAdvisor() {
   const assessment = air.data?.model.assessment
   const pm25 = assessment?.pollutants.find(item => item.key === 'pm25')?.value ?? null
 
-  const send = async (event?: FormEvent) => {
+  const send = async (event?: FormEvent, preset?: string) => {
     event?.preventDefault()
-    const question = input.trim()
+    const question = (preset ?? input).trim()
     if (!question || loading) return
     setInput('')
     setMessages(previous => [...previous, { role: 'user', text: question }])
@@ -54,8 +58,11 @@ export default function AIAdvisor() {
     setLoading(false)
   }
 
-  const applySuggestion = (question: string) => {
-    setInput(question)
+  // A suggested question is a one-tap action: pressing it asks it, rather than
+  // only copying the text into the input and making the user press send too.
+  const askSuggestion = (question: string) => {
+    if (loading) return
+    void send(undefined, question)
   }
 
   return (
@@ -80,7 +87,7 @@ export default function AIAdvisor() {
           <div className="suggested">
             <small>SUGGESTED QUESTIONS</small>
             {SUGGESTIONS.map(question => (
-              <button key={question} type="button" onClick={() => applySuggestion(question)}>
+              <button key={question} type="button" onClick={() => askSuggestion(question)} disabled={loading}>
                 {question}
                 <ArrowRight size={14} aria-hidden="true" />
               </button>

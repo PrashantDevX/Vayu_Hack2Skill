@@ -10,16 +10,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, RefreshCw } from 'lucide-react'
+import { ArrowRight, RefreshCw } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { AqiBadge } from '../components/AqiBadge'
 import { OfficialCard, ProvenanceNote } from '../components/DataProvenance'
-import { formatPollutantValue } from '../utils/aqi'
+import { CATEGORY_CLASS, CATEGORY_SUMMARY } from '../constants/aqi'
+import { dominantPollutant, formatPollutantValue } from '../utils/aqi'
 import { formatObservedAt } from '../utils/date'
 
 export default function AirQuality() {
   const { air, location, refresh, planner } = useApp()
   const assessment = air.data?.model.assessment
+  const dominant = assessment ? dominantPollutant(assessment) : null
+  const band = assessment?.category ? CATEGORY_CLASS[assessment.category] : 'unavailable'
   const chartData = (air.data?.model.hourly ?? []).map(point => ({
     label: point.label,
     pm25: point.pm25,
@@ -51,6 +54,43 @@ export default function AirQuality() {
 
       {air.data && assessment && (
         <>
+          {/* Read the verdict first, then the evidence. This page exists to make
+              the number checkable, but the first line still says what it means. */}
+          <section className={`air-summary band-${band}`} aria-labelledby="air-summary-heading">
+            <div className="air-summary-copy">
+              <p className="eyebrow">WHAT THIS MEANS TODAY</p>
+              <h2 id="air-summary-heading">
+                {assessment.aqi === null
+                  ? 'No overall index can be computed from the current model coverage'
+                  : assessment.category
+                    ? CATEGORY_SUMMARY[assessment.category]
+                    : 'Estimated index available; category unavailable'}
+              </h2>
+              <ul className="hero-chips" aria-label="Key readings">
+                <li>
+                  <small>Estimated AQI</small>
+                  <strong>{assessment.aqi ?? 'Unavailable'}</strong>
+                </li>
+                <li>
+                  <small>Category</small>
+                  <strong>{assessment.category ?? 'Insufficient coverage'}</strong>
+                </li>
+                <li>
+                  <small>Dominant pollutant</small>
+                  <strong>{dominant ? `${dominant.label} · ${formatPollutantValue(dominant.value, dominant.key)} ${dominant.unit}` : 'Unavailable'}</strong>
+                </li>
+                <li>
+                  <small>Cleaner window</small>
+                  <strong>{planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : 'Unavailable'}</strong>
+                </li>
+              </ul>
+              <p className="data-note">
+                Estimated CPCB-style index computed from Open-Meteo CAMS model fields. It is not an official CPCB
+                station AQI, and the official card further down stays separate.
+              </p>
+            </div>
+          </section>
+
           <ProvenanceNote
             provider={air.data.model.provider}
             model={air.data.model.model}
@@ -154,7 +194,7 @@ export default function AirQuality() {
                 Windows use the next 24 hourly model values. They are not a claim that every morning or evening is
                 cleaner; actual conditions can change.
               </p>
-              <Link className="text-link" to="/planner">Build the daily plan <ArrowLeft size={15} aria-hidden="true" /></Link>
+              <Link className="text-link" to="/planner">Build the daily plan <ArrowRight size={15} aria-hidden="true" /></Link>
             </section>
           </div>
 

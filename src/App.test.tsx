@@ -126,7 +126,52 @@ describe('application integration', () => {
     )).toBe(true)
   })
 
-  it('shows sustainable alternatives without inventing kilogram savings', async () => {
+  it('puts the deterministic plan above the optional AI brief', async () => {
+    window.history.pushState({}, '', '/planner')
+    localStorage.setItem('vayu.onboarded.v1', 'true')
+    render(<App />)
+
+    const actionsHeading = await screen.findByRole('heading', { name: /recommended actions/i })
+    const briefHeading = screen.getByRole('heading', { name: /AI daily brief/i })
+    // The plan is authoritative, the AI wording is supplementary. A page that
+    // asks for a brief before showing the plan inverts that relationship.
+    expect(actionsHeading.compareDocumentPosition(briefHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByText(/today's plan/i)).toBeInTheDocument()
+    // Provider refresh and brief generation are separate controls.
+    expect(screen.getByRole('button', { name: /Refresh data/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Generate brief/i })).toBeInTheDocument()
+  })
+
+  it('answers a suggested question in one tap instead of only filling the input', async () => {
+    window.history.pushState({}, '', '/advisor')
+    localStorage.setItem('vayu.onboarded.v1', 'true')
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Is it safe to go running today\?/i }))
+
+    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/chat', expect.any(Object)))
+    const chatCall = vi.mocked(fetch).mock.calls.find(([input]) => String(input) === '/api/chat')
+    const body = JSON.parse(String((chatCall?.[1] as RequestInit | undefined)?.body))
+    expect(body.message).toBe('Is it safe to go running today?')
+    // The question is visible in the transcript as well as on the button itself.
+    expect(screen.getAllByText('Is it safe to go running today?').length).toBe(2)
+  })
+
+  // The route-level pages are lazy-loaded, so this test waits for the module
+  // rather than asserting immediately; jsdom startup under the full suite is
+  // slow enough to need an explicit budget.
+  it('leads the air-quality page with what the reading means', async () => {
+    window.history.pushState({}, '', '/air-quality')
+    localStorage.setItem('vayu.onboarded.v1', 'true')
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: /Sensitive groups should reduce prolonged or strenuous outdoor activity/i }, { timeout: 15000 })).toBeInTheDocument()
+    expect(screen.getByText(/WHAT THIS MEANS TODAY/i)).toBeInTheDocument()
+    // The official card stays a separate source, never merged into the estimate.
+    expect(screen.getByText(/not an official CPCB station AQI/i)).toBeInTheDocument()
+  }, 25000)
+
+  it('shows the sustainable alternatives without inventing kilogram savings', async () => {
     window.history.pushState({}, '', '/impact')
     render(<App />)
 
