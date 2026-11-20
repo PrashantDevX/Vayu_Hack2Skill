@@ -66,10 +66,10 @@ Without these, the deterministic planner, deterministic chat, and model-data das
 
 | Area | Behaviour |
 | --- | --- |
-| **Onboarding** | Three steps: location, household, routine. Every field optional; defaults are valid. Stored locally only. |
-| **Overview** | Estimated CPCB-style model AQI, dominant pollutant, weather, cleaner/higher-pollution windows, today's top actions, checklist. |
+| **Onboarding** | Four steps: location, household, routine, then a plain-language review of what will be saved. Every field optional; defaults are valid. Stored locally only. |
+| **Overview** | Priority action as the hero, then the day's three decision points, the three tickable actions, household reasoning, and the estimated AQI/dominant pollutant/weather cards below them. |
 | **Air quality** | Model AQI card, full pollutant table with sub-indices and CPCB averaging periods, separate official-observation card, 24-hour chart plus an accessible data table. |
-| **Daily planner** | Deterministic, profile-aware actions across morning, commute, outdoor, indoor, school, elderly, evening and night, each with why/when/who/effort/cost/benefit/limitations/sources. Optional AI brief. |
+| **Daily planner** | Deterministic, profile-aware actions across morning, commute, outdoor, indoor, school, elderly, evening and night, each with why/when/who/effort/cost/benefit/limitations/sources. Progress summary first; optional AI brief last. |
 | **Indoor air** | Source-control-first guidance filtered by budget, interactive room configurator with CADR sizing, explicit safety rules (no ozone, no unsafe DIY, no blind window-opening). |
 | **Impact simulator** | Transport emissions vs a solo-car baseline with uncertainty range and factor version; outdoor exposure-time proxy; indoor intervention comparison; sustainable alternatives for transport, household and community. |
 | **Family protection** | Guidance segmented for children, older adults, outdoor workers, respiratory and cardiovascular sensitivity, plus mask guidance. |
@@ -225,7 +225,7 @@ Each requirement from the brief, and where it lives.
 
 | Requirement | Implementation | Key files |
 | --- | --- | --- |
-| A. Onboarding: city search, optional geolocation, manual coords, confirmation | Three-step modal; Open-Meteo geocoding; permission-based geolocation with denial handling; lat/lon validation; rounded storage | `components/OnboardingDialog.tsx`, `components/LocationSearch.tsx`, `utils/profile.ts` |
+| A. Onboarding: city search, optional geolocation, manual coords, confirmation | Four-step modal with a review step; Open-Meteo geocoding; permission-based geolocation with denial handling; lat/lon validation; rounded storage | `components/OnboardingDialog.tsx`, `components/LocationSearch.tsx`, `utils/profile.ts` |
 | A. Household profile: adults, children, elderly, outdoor worker, sensitivities | Profile form used in onboarding and settings, Zod-validated | `components/ProfileForm.tsx`, `utils/profile.ts` |
 | A. Lifestyle: commute, distance, timing, exercise, cooking fuel, ventilation, purifier, room size, budget | All captured and consumed by the planner, indoor page and simulator | `types.ts`, `constants/aqi.ts` |
 | A. Budget bands | Free / Under ₹1,500 / ₹1,500–₹12,000 / Premium solutions | `constants/aqi.ts` |
