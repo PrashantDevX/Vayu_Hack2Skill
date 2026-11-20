@@ -102,10 +102,7 @@ button:disabled { opacity:.6; cursor:not-allowed; }
 dialog.modal { position:fixed; inset:76px 38px auto auto; margin:0; width:min(430px,calc(100vw - 24px)); max-height:calc(100vh - 100px); overflow:auto; background:#fff; border:1px solid var(--line); border-radius:12px; padding:18px; box-shadow:0 18px 50px rgba(31,48,37,.18); }
 dialog.modal::backdrop { background:rgba(27,41,32,.28); backdrop-filter:blur(2px); }
 dialog.onboarding-modal { width:min(700px,calc(100vw - 24px)); inset:40px auto auto 50%; transform:translateX(-50%); }
-.onboarding-progress { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 16px; }
-.onboarding-progress span { font-size:9px; color:#8a948c; border:1px solid var(--line); border-radius:20px; padding:5px 9px; }
-.onboarding-progress span.current { background:#e7eee7; color:#315b47; border-color:#cfdccd; font-weight:800; }
-.onboarding-progress span.done { color:#5b7a66; }
+.onboarding-progress { display:grid; gap:8px; margin:14px 0 10px; padding-left:0; list-style:none; }
 .onboarding-step { min-height:220px; }
 .current-location { display:flex; align-items:center; gap:6px; font-size:12px; color:#4f5f54; margin:0 0 12px; }
 .onboarding-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid var(--line); padding-top:14px; margin-top:16px; }
@@ -1356,9 +1353,6 @@ dialog.onboarding-modal {
     transform: none;
     padding: 16px;
   }
-  .onboarding-progress {
-    grid-template-columns: repeat(3, 1fr);
-  }
   .onboarding-step-chip {
     justify-content: center;
     min-height: 48px;
@@ -1967,4 +1961,25 @@ dialog.onboarding-modal {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
   }
+}
+
+/* Onboarding step chips carry a label and a description inside one button. */
+.onboarding-step-chip > button > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.onboarding-step-chip > button strong {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.onboarding-step-chip > button small {
+  font-size: 9px;
+  line-height: 1.3;
+  color: inherit;
+  opacity: .72;
 }
