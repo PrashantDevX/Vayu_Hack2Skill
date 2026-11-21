@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BUDGET_BANDS, COMMUTE_MODES } from '../constants/aqi'
 import type { Profile } from '../types'
 
@@ -24,10 +24,19 @@ interface NumberFieldProps {
 function NumberField({ id, label, value, min, max, step, onChange }: NumberFieldProps) {
   const [text, setText] = useState(() => String(value))
   const parsed = text.trim() === '' ? null : Number(text)
+  const [editing, setEditing] = useState(false)
   // Out-of-range input used to be dropped silently while the typed text stayed
   // on screen, so the field looked accepted. Expose the invalid state instead.
   const invalid = parsed !== null && (!Number.isFinite(parsed) || parsed < min || parsed > max)
   const hintId = `${id}-hint`
+
+  useEffect(() => {
+    if (!editing) {
+      // Synchronise a saved/external profile reset while preserving local typed text.
+      // oxlint-disable-next-line react/set-state-in-effect
+      setText(String(value))
+    }
+  }, [editing, value])
 
   const commit = (nextText: string) => {
     setText(nextText)
@@ -51,9 +60,11 @@ function NumberField({ id, label, value, min, max, step, onChange }: NumberField
         value={text}
         aria-invalid={invalid || undefined}
         aria-describedby={invalid ? hintId : undefined}
+        onFocus={() => setEditing(true)}
         onChange={event => commit(event.target.value)}
         onBlur={() => {
-          if (text.trim() === '') setText(String(value))
+          setEditing(false)
+          if (text.trim() === '' || invalid) setText(String(value))
         }}
       />
       {invalid && (
@@ -79,7 +90,6 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
           <legend>Household</legend>
           <div className="form-grid">
             <NumberField
-              key={`${idPrefix}-adults-${value.adults}`}
               id={`${idPrefix}-adults`}
               label="Adults (18–64)"
               value={value.adults}
@@ -88,7 +98,6 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
               onChange={next => set('adults', next)}
             />
             <NumberField
-              key={`${idPrefix}-children-${value.children}`}
               id={`${idPrefix}-children`}
               label="Children"
               value={value.children}
@@ -97,7 +106,6 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
               onChange={next => set('children', next)}
             />
             <NumberField
-              key={`${idPrefix}-elderly-${value.elderly}`}
               id={`${idPrefix}-elderly`}
               label="Older adults (65+)"
               value={value.elderly}
@@ -134,7 +142,6 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
               </select>
             </label>
             <NumberField
-              key={`${idPrefix}-distance-${value.commuteDistanceKm}`}
               id={`${idPrefix}-distance`}
               label="One-way distance (km)"
               value={value.commuteDistanceKm}
@@ -168,7 +175,6 @@ export function ProfileForm({ value, onChange, section = 'all', idPrefix = 'prof
               </select>
             </label>
             <NumberField
-              key={`${idPrefix}-area-${value.roomAreaSqFt}`}
               id={`${idPrefix}-area`}
               label="Bedroom area (sq ft)"
               value={value.roomAreaSqFt}

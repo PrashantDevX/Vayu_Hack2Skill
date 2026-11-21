@@ -66,7 +66,7 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, 26 files | 213 tests pass |
+| `npm test` | Vitest, current file count | 222 tests pass in 28 files |
 | `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.00 / 86.59 / 97.76 / 98.20 (stmts/branch/fns/lines) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
@@ -435,7 +435,7 @@ Before reporting work complete:
 
 - [ ] `npm run typecheck` clean
 - [ ] `npm run lint` clean (zero warnings)
-- [ ] `npm test` green (currently 213 tests / 26 files)
+- [ ] `npm test` green (record the current file/test count at validation time)
 - [ ] `npm run test:coverage` passes thresholds
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded readings, fake charts, placeholder buttons or dead links
@@ -493,7 +493,7 @@ checked in the repository.
 | Code Quality | 88 | 97 | Shared page primitives, decomposed simulator, single-source recommendation composition, typed CSS vars, no dead aliases |
 | Security | 99 | 99 | Unchanged: server-only keys, Zod on every boundary, CSP in `vercel.json`, privacy-safe share text |
 | Efficiency | 100 | 100 | Unchanged: lazy routes, Recharts isolated in the air-quality chunk, in-memory cache |
-| Testing | 99 | 99 | 26 files / 213 tests, coverage 95.00 / 86.59 / 97.76 / 98.20 |
+| Testing | 99 | 99 | 222 tests in 28 files, coverage 95.00 / 86.59 / 97.76 / 98.20 |
 | Accessibility | 96 | 98 | Contrast tokens audited to ≥4.8:1 (body) and ≥6.2:1 (labels); decorative gauge `aria-hidden`; list semantics for reading chips |
 | Problem Statement Alignment | 93 | 98 | Condition-aware advisor questions, planner actions link to their modelling surface, family/community share summary |
 | **Overall** | **94.16** | **97+** | |
@@ -502,6 +502,13 @@ Do not restate these numbers as measurements of the product's real-world impact.
 the submission, and they move only when the code behind them moves.
 
 ### 15.2 What this sprint changed (2026-11-21)
+
+- **Continued the UI/UX implementation sprint** with primary navigation and mobile menu ARIA state,
+  linked numeric-field validation messages, and an editing-safe profile number field that preserves blank
+  text and restores invalid or empty values on blur.
+- **Removed the unused `framer-motion` runtime dependency** to keep the dependency surface lean.
+- **Added deterministic chat fallback coverage** for ambient, indoor, ventilation, purifier and medical intents,
+  so real opening questions remain grounded even when Gemini or the network is unavailable.
 
 - **Extracted five page primitives** — `PageHeading`, `RefreshButton`, `KeyReadings`, `AqiGauge`,
   `SourceLinks` — and rewired all eight routes. This removed three divergent refresh labels, two source-list
@@ -528,8 +535,8 @@ the submission, and they move only when the code behind them moves.
 
 | Item | Status | Note |
 | --- | --- | --- |
-| Automated accessibility audit (axe/Lighthouse) | Open | Not installed here; contrast was audited with a script, semantics by hand |
-| Browser end-to-end navigation/focus test | Open | No Playwright/Cypress suite; verified manually |
+| Automated accessibility audit (axe/Lighthouse) | Open | Static source audit completed; browser engine measurement remains the next external check |
+| Browser end-to-end navigation/focus test | Open | Component/integration coverage exists; real-device browser verification remains open |
 | Global rate limiting | Open | Needs `UPSTASH_*`; currently per-instance (§9) |
 | Official AQI from data.gov.in | Limited | Dataset publishes concentrations, not AQI; needs a personal key (§13) |
 | `npm audit` dev-only advisories | Open | No patched `picomatch` release yet (§13) |

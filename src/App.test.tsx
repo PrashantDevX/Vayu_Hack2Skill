@@ -89,6 +89,8 @@ describe('application integration', () => {
     for (const label of ['Overview', 'Air quality', 'Daily planner', 'Indoor air', 'Impact simulator', 'Family protection', 'AI advisor']) {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     }
+    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-controls', 'primary-sidebar')
   })
 
   it('preserves assistant source labels and renders trusted source links', async () => {

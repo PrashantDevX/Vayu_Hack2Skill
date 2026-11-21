@@ -113,7 +113,7 @@ export function AppShell() {
             aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={menuOpen}
             aria-controls="primary-sidebar"
-            onClick={() => setMenuOpen(true)}
+            onClick={() => setMenuOpen(open => !open)}
           >
             <Menu size={20} />
           </button>
