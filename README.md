@@ -69,7 +69,7 @@ Without these, the deterministic planner, deterministic chat, and model-data das
 | **Onboarding** | Four steps: location, household, routine, then a plain-language review of what will be saved. Every field optional; defaults are valid. Stored locally only. |
 | **Overview** | Priority action as the hero, then the day's three decision points, the three tickable actions, household reasoning, and the estimated AQI/dominant pollutant/weather cards below them. |
 | **Air quality** | Model AQI card, full pollutant table with sub-indices and CPCB averaging periods, separate official-observation card, 24-hour chart plus an accessible data table. |
-| **Daily planner** | Deterministic, profile-aware actions across morning, commute, outdoor, indoor, school, elderly, evening and night, each with why/when/who/effort/cost/benefit/limitations/sources and a link to the surface that models it. Progress summary first; optional AI brief last. |
+| **Daily planner** | Deterministic, profile-aware actions across morning, commute, outdoor, indoor, school, elderly, evening and night, each with why/when/who/effort/cost/benefit/limitations/sources and a link to the surface that models it. Progress summary first; optional AI brief last, using the displayed plan snapshot. Provider refresh is a separate action. |
 | **Indoor air** | Source-control-first guidance filtered by budget, interactive room configurator with CADR sizing, explicit safety rules (no ozone, no unsafe DIY, no blind window-opening). |
 | **Impact simulator** | Transport emissions vs a solo-car baseline with uncertainty range and factor version; outdoor exposure-time proxy; indoor intervention comparison; sustainable alternatives for transport, household and community. |
 | **Family protection** | Guidance segmented for children, older adults, outdoor workers, respiratory and cardiovascular sensitivity, plus mask guidance. A "pass this on" card copies a privacy-safe text summary (public model values, no household composition) for family or a community group. |
@@ -163,6 +163,7 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 - Secondary text uses two audited tokens — `--muted` (≥4.8:1) and `--muted-strong` (≥6.2:1) — on white,
   cream and the tinted panels, instead of the low-contrast greys the first draft used.
 - Layout works from 320 px up; sidebar becomes an off-canvas menu with an explicit close control.
+- Opening the mobile menu moves keyboard focus to its first link; Escape or closing returns focus to the menu button, and closed off-canvas links are hidden from keyboard navigation.
 
 ---
 
@@ -178,7 +179,7 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ```
 Test Files  28 passed (28)
-Tests      222 passed (222)
+Tests      224 passed (224)
 
 Coverage (v8, utils/services/constants/api):
 Statements  95.00%   Branches 86.59%   Functions 97.76%   Lines 98.20%
@@ -271,7 +272,7 @@ Each requirement from the brief, and where it lives.
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
 | Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~413 kB raw / ~129 kB gzip |
 | Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion, audited contrast tokens |
-| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 222 tests; see `docs/TESTING.md` |
+| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 224 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 
@@ -288,9 +289,6 @@ Each requirement from the brief, and where it lives.
 - **Model AQI is an estimate.** Instantaneous CAMS concentrations are not official 24-hour/8-hour averages.
 - **No indoor sensor input.** Indoor guidance is source control and sizing; no indoor concentration is
   predicted or claimed.
-- **`npm audit` reports 7 high dev-only advisories** from `picomatch` ≤ 4.0.7 (CVE-2026-112366, ReDoS), reached
-  through `vite`/`vitest`. No patched release exists at the time of writing. It is build tooling only — not in
-  the browser bundle, not imported by `api/*`. Re-run `npm audit` and upgrade when a fix ships.
 - **Rate limiting and caching are in-memory per instance**, which damps abuse but is not a billing guarantee.
 - **Lighthouse and live-URL checks** must be run against a deployment; they are not measured in this repo.
 

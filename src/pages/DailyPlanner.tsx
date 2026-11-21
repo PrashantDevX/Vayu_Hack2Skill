@@ -29,7 +29,6 @@ export default function DailyPlanner() {
 
   const generateBrief = async () => {
     setBriefLoading(true)
-    refresh()
     const assessment = air.data?.model.assessment
     const result = await requestAiBrief({
       context: {

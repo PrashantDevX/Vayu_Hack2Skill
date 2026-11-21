@@ -253,7 +253,7 @@ dialog.onboarding-modal { width:min(700px,calc(100vw - 24px)); inset:40px auto a
   .message-body{max-width:88%}
 }
 @media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
 }
 
 /* ---------- sustainable alternatives ---------- */
@@ -1009,6 +1009,14 @@ dialog.modal {
 @media (max-width: 760px) {
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { width: min(286px, 84vw); }
+  .sidebar {
+    visibility: hidden;
+    transition: transform .2s, visibility 0s linear .2s;
+  }
+  .sidebar.open {
+    visibility: visible;
+    transition: transform .2s;
+  }
   main { grid-column: 1; }
   .topbar { height: 64px; padding: 0 14px; }
   .location-control { max-width: 190px; }

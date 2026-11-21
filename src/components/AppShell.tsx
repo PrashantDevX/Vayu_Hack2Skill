@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   Bot,
@@ -36,6 +36,15 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [locationOpen, setLocationOpen] = useState(false)
   const { pathname } = useLocation()
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const firstNavLinkRef = useRef<HTMLAnchorElement>(null)
+  const wasMenuOpen = useRef(false)
+
+  useEffect(() => {
+    if (menuOpen) firstNavLinkRef.current?.focus()
+    else if (wasMenuOpen.current) menuButtonRef.current?.focus()
+    wasMenuOpen.current = menuOpen
+  }, [menuOpen])
 
   // `NavLink` only exposes its active state through `className`, so the current
   // page was conveyed by colour alone. Assistive technology needs
@@ -55,7 +64,14 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <aside id="primary-sidebar" className={`sidebar ${menuOpen ? 'open' : ''}`} aria-label="Sidebar">
+      <aside
+        id="primary-sidebar"
+        className={`sidebar ${menuOpen ? 'open' : ''}`}
+        aria-label="Sidebar"
+        onKeyDown={event => {
+          if (event.key === 'Escape' && menuOpen) setMenuOpen(false)
+        }}
+      >
         <div className="brand">
           <div className="brand-mark"><Leaf size={22} aria-hidden="true" /></div>
           <span>Vayu</span>
@@ -71,6 +87,7 @@ export function AppShell() {
             return (
               <Link
                 key={to}
+                ref={to === '/' ? firstNavLinkRef : undefined}
                 to={to}
                 className={active ? 'active' : ''}
                 aria-current={active ? 'page' : undefined}
@@ -110,6 +127,7 @@ export function AppShell() {
           <button
             type="button"
             className="menu-button"
+            ref={menuButtonRef}
             aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={menuOpen}
             aria-controls="primary-sidebar"

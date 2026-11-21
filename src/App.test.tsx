@@ -93,6 +93,19 @@ describe('application integration', () => {
     expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-controls', 'primary-sidebar')
   })
 
+  it('moves focus into the mobile navigation and returns it when closed', () => {
+    render(<App />)
+    const menuButton = screen.getByRole('button', { name: 'Open navigation' })
+    fireEvent.click(menuButton)
+
+    const overviewLink = screen.getByRole('link', { name: 'Overview' })
+    expect(overviewLink).toHaveFocus()
+
+    fireEvent.keyDown(overviewLink, { key: 'Escape' })
+    expect(menuButton).toHaveFocus()
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('preserves assistant source labels and renders trusted source links', async () => {
     window.history.pushState({}, '', '/advisor')
     localStorage.setItem('vayu.onboarded.v1', 'true')
@@ -143,6 +156,21 @@ describe('application integration', () => {
     expect(screen.getByRole('button', { name: /Refresh data/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Generate brief/i })).toBeInTheDocument()
   })
+
+  it('does not refresh provider data when generating a brief from the current plan', async () => {
+    window.history.pushState({}, '', '/planner')
+    localStorage.setItem('vayu.onboarded.v1', 'true')
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: '6 recommended actions' })).toBeInTheDocument()
+    const modelFetchCount = () =>
+      vi.mocked(fetch).mock.calls.filter(([input]) => String(input).includes('air-quality-api')).length
+    const modelFetchesBeforeBrief = modelFetchCount()
+
+    fireEvent.click(screen.getByRole('button', { name: /Generate brief/i }))
+    expect(await screen.findByText(/AI brief is unavailable/i)).toBeInTheDocument()
+    expect(modelFetchCount()).toBe(modelFetchesBeforeBrief)
+  }, 25000)
 
   it('answers a suggested question in one tap instead of only filling the input', async () => {
     window.history.pushState({}, '', '/advisor')

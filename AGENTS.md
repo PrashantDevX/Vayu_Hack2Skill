@@ -61,12 +61,12 @@ These are product-correctness rules, not style preferences. Breaking one is a bu
 
 Node 20+ is expected. Install once with `npm install`.
 
-| Command | What it does | Expected result (2026-11-21) |
+| Command | What it does | Expected result (2026-11-22) |
 | --- | --- | --- |
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, current file count | 222 tests pass in 28 files |
+| `npm test` | Vitest, current file count | 224 tests pass in 28 files |
 | `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.00 / 86.59 / 97.76 / 98.20 (stmts/branch/fns/lines) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
@@ -393,7 +393,7 @@ every key and restores in-memory defaults.
 
 ## 11. Deployment
 
-Live: **https://vayu-wheat.vercel.app** (Vercel project `prashant-singhs-projects-4b5930a2/vayu`, region `iad1`).
+Live: **https://vayu-wheat.vercel.app** (Vercel project `prashant-singhs-projects-4b5930a2/vayu`; `vercel.json` configures functions for `bom1`).
 
 The project is linked to GitHub `PrashantDevX/Vayu_Hack2Skill`, so **every push to `main` deploys to
 production automatically** and every other branch produces a preview deployment.
@@ -458,9 +458,6 @@ Before reporting work complete:
   observation is implied. This is stated in the UI, not hidden.
 - **No indoor sensor input.** Indoor advice is source-control and sizing guidance; no indoor concentration
   is predicted.
-- **`npm audit` reports 7 high dev-only advisories** (CVE-2026-112366, `picomatch` ≤ 4.0.7 ReDoS) reachable
-  through `vite`/`vitest`. No patched release exists yet. It is build-tooling only: not shipped in the
-  browser bundle and not imported by `api/*`. Re-check with `npm audit` and upgrade when patched.
 - **Lighthouse and live deployment checks** require a deployed URL; they are not run in this environment.
 - Rate limiting and caching are in-memory per instance, as noted in §9.
 
@@ -493,7 +490,7 @@ checked in the repository.
 | Code Quality | 88 | 97 | Shared page primitives, decomposed simulator, single-source recommendation composition, typed CSS vars, no dead aliases |
 | Security | 99 | 99 | Unchanged: server-only keys, Zod on every boundary, CSP in `vercel.json`, privacy-safe share text |
 | Efficiency | 100 | 100 | Unchanged: lazy routes, Recharts isolated in the air-quality chunk, in-memory cache |
-| Testing | 99 | 99 | 222 tests in 28 files, coverage 95.00 / 86.59 / 97.76 / 98.20 |
+| Testing | 99 | 99 | 224 tests in 28 files, coverage 95.00 / 86.59 / 97.76 / 98.20 |
 | Accessibility | 96 | 98 | Contrast tokens audited to ≥4.8:1 (body) and ≥6.2:1 (labels); decorative gauge `aria-hidden`; list semantics for reading chips |
 | Problem Statement Alignment | 93 | 98 | Condition-aware advisor questions, planner actions link to their modelling surface, family/community share summary |
 | **Overall** | **94.16** | **97+** | |
@@ -531,15 +528,35 @@ the submission, and they move only when the code behind them moves.
 - **Fixed the contrast debt.** 103 raw grey declarations were replaced by `--muted` / `--muted-strong`; every
   remaining sub-4.5:1 `color:` declaration is either light-on-dark text or a decorative icon.
 
+#### 2026-11-22 follow-up
+
+- **Fixed AI-brief snapshot consistency.** Brief generation no longer starts a provider refresh whose result it
+  did not await; the brief now uses the same displayed assessment and planner state. The explicit refresh
+  control remains available separately.
+- **Improved mobile navigation keyboard access.** Opening the off-canvas menu focuses its first link; Escape
+  and the close controls restore focus to the menu button. A closed sidebar is `visibility:hidden`, so its
+  off-screen links cannot receive keyboard focus. Reduced-motion mode also removes the visibility delay.
+- Added integration tests for brief/provider-refresh separation and mobile-menu focus behaviour. A local
+  browser check at 390×844 confirmed focus entry, Escape dismissal, focus return and hidden closed state.
+- Re-ran typecheck, lint, all tests, coverage and build: 224 tests in 28 files; coverage
+  95.00 / 86.59 / 97.76 / 98.20; all commands passed.
+- The focused security review found no high-confidence exploitable vulnerabilities. `npm audit` and
+  `npm audit --omit=dev` both report zero vulnerabilities.
+- The TypeScript dependency assessment is saved at
+  `.github/modernize/assessment/reports/report-20261121203919/js-assessment-report.md`. It lists available
+  patch/minor updates and two major updates; no package upgrades were made in this review.
+- The external evaluation scores above remain historical; no score rerun was available, so no new score is
+  claimed.
+
 ### 15.3 Open items
 
 | Item | Status | Note |
 | --- | --- | --- |
-| Automated accessibility audit (axe/Lighthouse) | Open | Static source audit completed; browser engine measurement remains the next external check |
-| Browser end-to-end navigation/focus test | Open | Component/integration coverage exists; real-device browser verification remains open |
+| Automated accessibility audit (axe/Lighthouse) | Open | Mobile keyboard navigation was checked locally; a full automated audit remains open |
+| Browser end-to-end navigation/focus test | Partial | Focus entry/return and hidden menu state were verified locally; real-device verification remains open |
 | Global rate limiting | Open | Needs `UPSTASH_*`; currently per-instance (§9) |
 | Official AQI from data.gov.in | Limited | Dataset publishes concentrations, not AQI; needs a personal key (§13) |
-| `npm audit` dev-only advisories | Open | No patched `picomatch` release yet (§13) |
+| Independent evaluation scores | Not rerun | The 94.16 baseline is historical; above-97 targets are not independently verified |
 
 ### 15.4 Submission constraints
 

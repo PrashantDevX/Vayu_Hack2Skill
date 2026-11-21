@@ -10,11 +10,11 @@ npm run test:watch     # watch mode
 npm run test:coverage  # v8 coverage, thresholds enforced
 ```
 
-Latest verified result (2026-11-19):
+Latest verified result (2026-11-22):
 
 ```
-Test Files  24 passed (24)
-Tests      180 passed (180)
+Test Files  28 passed (28)
+Tests      224 passed (224)
 ```
 
 ---

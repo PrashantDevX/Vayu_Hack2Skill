@@ -122,26 +122,10 @@ That is a deliberate, narrow exception: no inline `<style>` or `<script>` is gen
 
 ---
 
-## 8. Dependency audit (2026-11-19)
+## 8. Dependency audit (2026-11-22)
 
-`npm audit` reports **zero vulnerabilities** across the installed dependency tree (exit code 0). Re-check after dependency changes and before release.
-
-Historical advisory details from the earlier audit are omitted because the current audit is clean.
-
-
-
-Assessment:
-
-- **Dev-only.** `picomatch` is a build/test-time glob matcher. It is not imported by `src/` or `api/`, and it
-  is not present in the browser bundle or the serverless function bundle.
-- **Not attacker-reachable at runtime.** The vulnerable pattern requires an application to compile
-  attacker-supplied glob patterns. Vayu supplies only static globs to Vite/Vitest.
-- **No fix exists yet.** `npm audit fix` proposes downgrading Vite/Vitest to older majors, which would
-  reintroduce other issues; `npm audit fix --force` would break the toolchain. The correct action is to wait
-  for a patched `picomatch` and upgrade.
-
-Re-check with `npm audit` before submission and after any dependency bump. No other advisories are reported;
-the runtime dependency set (React, React Router, Recharts, Zod, `@google/genai`) is clean.
+`npm audit` and `npm audit --omit=dev` both report **zero vulnerabilities** across the installed dependency
+tree (exit code 0). Re-check after dependency changes and before release.
 
 ---
 
@@ -149,7 +133,6 @@ the runtime dependency set (React, React Router, Recharts, Zod, `@google/genai`)
 
 | Risk | Severity | Mitigation / status |
 | --- | --- | --- |
-| Dev-tool ReDoS (picomatch) | Low (dev-only) | Documented above; upgrade when patched |
 | Rate limit bypass via multiple instances | Medium | Optional Upstash counter; provider is not configured/verified, so fallback remains per-instance |
 | Client spoofing forwarded identity headers | Low | Only platform `x-vercel-forwarded-for` is used; client forwarding headers are ignored |
 | Prompt injection influencing wording | Low | Strict schemas, JSON-serialized untrusted context, output safety/relevance checks, no tool access |
