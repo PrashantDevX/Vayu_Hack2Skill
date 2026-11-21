@@ -34,13 +34,25 @@ $results = foreach ($case in $cases) {
   } | ConvertTo-Json -Depth 5 -Compress
   try {
     $response = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/chat" -ContentType 'application/json' -Body $payload -TimeoutSec 30
-    [pscustomobject]@{ tag=$case.tag; status='PASS'; answer=$response.answer; sources=@($response.sources) }
+    $answer = $response.answer
+    $sources = $response.sources
+    $validAnswer = $answer -is [string] -and -not [string]::IsNullOrWhiteSpace($answer) -and $answer.Length -le 1800
+    $validSources = $sources -is [array] -and $sources.Count -le 5 -and @($sources | Where-Object { $_ -isnot [string] }).Count -eq 0
+    if ($validAnswer -and $validSources) {
+      [pscustomobject]@{ tag=$case.tag; status='HTTP_SCHEMA_PASS'; answer=$answer; sources=@($sources) }
+    } else {
+      [pscustomobject]@{ tag=$case.tag; status='HTTP_SCHEMA_FAIL'; answer=$null; sources=@(); error='Invalid response shape' }
+    }
   } catch {
-    [pscustomobject]@{ tag=$case.tag; status='FAIL'; answer=$null; sources=@(); error=$_.Exception.GetType().Name }
+    [pscustomobject]@{ tag=$case.tag; status='HTTP_SCHEMA_FAIL'; answer=$null; sources=@(); error=$_.Exception.GetType().Name }
   }
 }
 
 $destination = Join-Path (Get-Location) 'docs/live-ai-evaluation.json'
-$results | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $destination -Encoding utf8
-$passed = @($results | Where-Object status -eq 'PASS').Count
-Write-Output "Cases: $($results.Count); HTTP/schema pass: $passed; sanitized output: docs/live-ai-evaluation.json"
+$report = [pscustomobject]@{
+  scope = 'Live endpoint HTTP and response-shape check only; answer safety, relevance and grounding are not scored.'
+  cases = @($results)
+}
+$report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $destination -Encoding utf8
+$passed = @($results | Where-Object status -eq 'HTTP_SCHEMA_PASS').Count
+Write-Output "Cases: $($results.Count); HTTP/schema pass: $passed; answer semantics not scored; output: docs/live-ai-evaluation.json"

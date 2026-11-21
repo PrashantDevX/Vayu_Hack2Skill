@@ -51,7 +51,7 @@ export async function fetchOfficialAqi(city: string): Promise<OfficialSnapshot> 
   })
 
   try {
-    const raw = await fetchJson<unknown>(`/api/aqi?city=${encodeURIComponent(city)}`, {
+    const raw = await fetchJson(`/api/aqi?city=${encodeURIComponent(city)}`, {
       timeoutMs: 6_000,
       retries: 0,
     })

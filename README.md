@@ -7,6 +7,10 @@ than invents.
 
 Built for Hack2Skill PromptWars Challenge 6 (Urban Air Quality Assistant).
 
+**Evaluation baseline:** The second submission received 97.27/100 overall (Code Quality 89, Security 100,
+Efficiency 100, Testing 99, Accessibility 100, Problem Statement Alignment 100). These are the pre-final-cycle
+external results; local changes in this cycle have not been scored by that evaluator.
+
 **Live:** https://vayu-wheat.vercel.app — deployed from `main`, so every push redeploys automatically.
 
 ---
@@ -182,7 +186,7 @@ Test Files  28 passed (28)
 Tests      224 passed (224)
 
 Coverage (v8, utils/services/constants/api):
-Statements  95.00%   Branches 86.59%   Functions 97.76%   Lines 98.20%
+Statements  95.00%   Branches 86.59%   Functions 97.76%   Lines 98.21%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.

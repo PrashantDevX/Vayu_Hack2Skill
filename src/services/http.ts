@@ -21,7 +21,7 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export async function fetchJson<T = unknown>(url: string, options: FetchJsonOptions = {}): Promise<T> {
+export async function fetchJson(url: string, options: FetchJsonOptions = {}): Promise<unknown> {
   const timeoutMs = options.timeoutMs ?? 9_000
   const retries = options.retries ?? 1
   let lastError: unknown = null
@@ -51,7 +51,8 @@ export async function fetchJson<T = unknown>(url: string, options: FetchJsonOpti
       const text = await response.text()
       if (!text) throw new Error('Provider returned an empty response')
       try {
-        return JSON.parse(text) as T
+        const payload: unknown = JSON.parse(text)
+        return payload
       } catch {
         throw new Error('Provider returned invalid JSON')
       }

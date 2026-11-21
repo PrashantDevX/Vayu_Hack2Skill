@@ -33,14 +33,14 @@ Tests      224 passed (224)
 
 ## 3. Coverage
 
-Measured 2026-11-21 over `src/utils`, `src/services`, `src/constants` and `api`:
+Measured 2026-11-22 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
 | Statements | 95.00% | 90% |
 | Branches | 86.59% | 78% |
 | Functions | 97.76% | 92% |
-| Lines | 98.20% | 93% |
+| Lines | 98.21% | 93% |
 
 Per-module highlights:
 
@@ -179,6 +179,13 @@ observation. There are no snapshot files, so formatting changes cannot silently 
 - **No Lighthouse or axe run in this repository.** Accessibility is implemented and manually checked, but not
   machine-audited here.
 - **Rate limiting and caching are per-process**, so multi-instance behaviour is not exercised.
+
+`docs/live-ai-evaluation.json` is a legacy exploratory capture. Its `PASS` values mean only that the endpoint
+returned an HTTP success and the script could read the response shape; the script did not score the answer's
+safety, relevance or grounding. Some captured answers include unsafe DIY filtration advice, so this file is
+not evidence that live Gemini output passed the current safety policy. New captures use an explicit
+`HTTP_SCHEMA_PASS`/`HTTP_SCHEMA_FAIL` status and include a scope statement. `docs/synthetic-ai-evaluation.json`
+covers deterministic fallback contracts only and is not a live-provider evaluation.
 
 ---
 

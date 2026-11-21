@@ -38,8 +38,10 @@ export function findBestWorstWindows(hourly: HourlyPoint[], windowHours = 2): {
 
   for (let index = 0; index + windowHours <= hourly.length; index += 1) {
     const slice = hourly.slice(index, index + windowHours)
-    if (slice.some(point => point.aqi === null || point.aqi === undefined)) continue
-    const aqiValues = slice.map(point => point.aqi as number)
+    const aqiValues = slice
+      .map(point => point.aqi)
+      .filter((value): value is number => value !== null && value !== undefined)
+    if (aqiValues.length !== slice.length) continue
     const pm25Values = slice.map(point => point.pm25).filter((value): value is number => value !== null)
     const first = slice[0]
     const last = slice[slice.length - 1]

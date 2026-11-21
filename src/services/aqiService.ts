@@ -178,7 +178,7 @@ async function fetchWeather(latitude: number, longitude: number): Promise<Weathe
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
     '&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto'
   try {
-    const raw = await fetchJson<unknown>(url, { timeoutMs: 8_000, retries: 1 })
+    const raw = await fetchJson(url, { timeoutMs: 8_000, retries: 1 })
     const parsed = weatherResponseSchema.safeParse(raw)
     if (!parsed.success) return null
     const current = parsed.data.current
@@ -212,7 +212,7 @@ async function fetchModel(
     `&current=${params}&hourly=${params}&forecast_days=2&timezone=auto`
 
   const [airResult, weather] = await Promise.all([
-    fetchJson<unknown>(url, { timeoutMs: 9_000, retries: 1 }),
+    fetchJson(url, { timeoutMs: 9_000, retries: 1 }),
     fetchWeather(latitude, longitude),
   ])
 

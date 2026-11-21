@@ -13,7 +13,7 @@ describe('fetchJson', () => {
   it('parses a successful JSON response', async () => {
     const fetchMock = vi.fn().mockResolvedValue(response('{"ok":true}'))
     vi.stubGlobal('fetch', fetchMock)
-    await expect(fetchJson<{ ok: boolean }>('https://example.test')).resolves.toEqual({ ok: true })
+    await expect(fetchJson('https://example.test')).resolves.toEqual({ ok: true })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 

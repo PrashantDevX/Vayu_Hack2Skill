@@ -29,7 +29,7 @@ export async function searchCities(query: string, limit = 5): Promise<Place[]> {
   const url =
     'https://geocoding-api.open-meteo.com/v1/search' +
     `?name=${encodeURIComponent(trimmed)}&count=${limit}&language=en&format=json`
-  const raw = await fetchJson<unknown>(url, { timeoutMs: 7_000, retries: 1 })
+  const raw = await fetchJson(url, { timeoutMs: 7_000, retries: 1 })
   const parsed = geocodingSchema.safeParse(raw)
   if (!parsed.success) throw new Error('Geocoding provider returned an unexpected response')
 

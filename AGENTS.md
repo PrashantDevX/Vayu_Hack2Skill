@@ -67,7 +67,7 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
 | `npm test` | Vitest, current file count | 224 tests pass in 28 files |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.00 / 86.59 / 97.76 / 98.20 (stmts/branch/fns/lines) |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.00 / 86.59 / 97.76 / 98.21 (stmts/branch/fns/lines; verified 2026-11-22) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
@@ -479,11 +479,11 @@ Before reporting work complete:
 
 ## 15. Quality sprint log
 
-### 15.1 External review scores and what they drive
+### 15.1 Historical first-review scores and what they drove
 
-The project is scored by an independent review on six criteria. The scores below are the review's, not
-self-assigned; the "target" column is what this sprint is aiming at and the "evidence" column is what can be
-checked in the repository.
+The project is scored by an independent review on six criteria. The scores below are the earlier 94.16 first
+baseline and the targets from the 2026-11-21 quality sprint; they are historical, not the latest submission
+result. The latest pre-final-cycle result is recorded in §16.
 
 | Criterion | Before | Target | Evidence after this sprint |
 | --- | --- | --- | --- |
@@ -539,7 +539,7 @@ the submission, and they move only when the code behind them moves.
 - Added integration tests for brief/provider-refresh separation and mobile-menu focus behaviour. A local
   browser check at 390×844 confirmed focus entry, Escape dismissal, focus return and hidden closed state.
 - Re-ran typecheck, lint, all tests, coverage and build: 224 tests in 28 files; coverage
-  95.00 / 86.59 / 97.76 / 98.20; all commands passed.
+  95.00 / 86.59 / 97.76 / 98.21; all commands passed.
 - The focused security review found no high-confidence exploitable vulnerabilities. `npm audit` and
   `npm audit --omit=dev` both report zero vulnerabilities.
 - The TypeScript dependency assessment is saved at
@@ -556,10 +556,65 @@ the submission, and they move only when the code behind them moves.
 | Browser end-to-end navigation/focus test | Partial | Focus entry/return and hidden menu state were verified locally; real-device verification remains open |
 | Global rate limiting | Open | Needs `UPSTASH_*`; currently per-instance (§9) |
 | Official AQI from data.gov.in | Limited | Dataset publishes concentrations, not AQI; needs a personal key (§13) |
-| Independent evaluation scores | Not rerun | The 94.16 baseline is historical; above-97 targets are not independently verified |
+| Independent evaluation scores | Not rerun | The earlier 94.16 sprint baseline is historical. The latest pre-final-cycle submission scored 97.27; no post-change score is claimed. |
 
 ### 15.4 Submission constraints
 
 - Repository stays **public**, **single branch (`main`)**, **under 10 MB**, with the complete project code.
 - No duplicate project files, no extra branches, no removed functionality.
-- Claims in the README/AGENTS must be reproducible from the repository: every number above has a command.
+- Repository-derived claims in README/AGENTS should be reproducible from local checks; external evaluation scores are attributed to the reported submission and must not be presented as locally rerun.
+
+---
+
+## 16. Final submission quality review (2026-11-22)
+
+### Evaluation baseline
+
+The latest external result is the **second submission**, before this final local review: overall 97.27/100;
+Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and Problem Statement Alignment
+100. The original evaluator is not available in this environment. No post-change score is claimed.
+
+### Repository-wide audit findings and disposition
+
+| Priority | Finding | Affected area | Benefit / risk | Disposition |
+| --- | --- | --- | --- | --- |
+| High | `fetchJson<T>` asserted parsed JSON to caller-selected `T`, allowing an unvalidated provider response to be treated as trusted typed data. | `src/services/http.ts` and callers | Returning `unknown` forces runtime schema/shape checks; low behavior risk because production callers already use `unknown`. | Fixed in this cycle; callers validate the unknown response before use. |
+| Medium | Window selection narrowed nullable AQI values with `as number` after a separate scan, splitting the safety condition from the use. | `src/services/recommendationService.ts` | A type-guard filter keeps the invariant local and removes an unchecked assertion; behavior covered by existing planner tests. | Fixed in this cycle. |
+| Medium | `recommendationService.ts` remains a long content-heavy planner that combines thresholds, profile tailoring, wording and object construction. | `src/services/recommendationService.ts` | Further extraction could improve navigation, but rewriting stable health guidance carries meaningful regression risk. Existing pure-function boundaries and tests make this a follow-up, not a last-cycle rewrite. | Documented; no broad decomposition. |
+| Medium | `src/index.css` is 1,825 lines and contains repeated/late override rules from the visual refresh. | `src/index.css` | Consolidation could reduce cascade ambiguity, but mass CSS movement risks visual and accessibility regressions and is not warranted without a focused visual diff. | Documented; no stylesheet rewrite. |
+| Medium | Legacy live AI capture marks responses `PASS` based on HTTP/schema success even though at least one saved answer recommends an unsafe DIY filter. | `docs/live-ai-evaluation.json`, `scripts/evaluate-live-ai.ps1`, `docs/TESTING.md` | Prevents raw provider output from being mistaken for a semantic safety result; no runtime effect. | Testing docs now flag the historical artifact; future script output uses `HTTP_SCHEMA_PASS`/`HTTP_SCHEMA_FAIL` and records its scope. |
+| Low | Dependency assessment lists available patch/minor updates and two major updates. | `package.json`, dependency assessment report | Updates may resolve bugs but do not explain this score, and last-minute upgrades add regression risk. | No dependency changes; re-evaluate after submission. |
+
+### Changes completed
+
+- Changed `fetchJson` to return `unknown` and removed the test's caller-selected response type. Consumers must validate external JSON before relying on its shape.
+- Replaced planner's AQI type assertion with a narrowing filter whose completeness check directly guards the numeric average.
+- Added the latest second-submission score baseline and explicitly stated that the current local cycle has not received an external score.
+- Clarified that the legacy live AI capture records transport/schema success only, not answer safety or quality.
+- Updated the live evaluation script's status labels and report metadata so later captures state their limited scope.
+
+### Files changed in this cycle
+
+- `src/services/http.ts`
+- `src/services/http.test.ts`
+- `src/services/aqiService.ts`
+- `src/services/geocodingService.ts`
+- `src/services/officialService.ts`
+- `src/services/recommendationService.ts`
+- `README.md`
+- `docs/TESTING.md`
+- `scripts/evaluate-live-ai.ps1`
+- `AGENTS.md`
+
+### Submission controls and validation record
+
+- Stay on the existing `main` branch; do not push or deploy during this review.
+- GitHub reports the repository public, with one branch (`main`) and size 1,007 KiB (below 10 MB). The working tree remains on `main`; no push or deploy was performed.
+- Final validation on 2026-11-22: typecheck PASS, lint PASS (zero warnings), 28 test files / 224 tests PASS, coverage PASS (95.00% statements / 86.59% branches / 97.76% functions / 98.21% lines), and production build PASS.
+- No official evaluation score can be inferred from local checks; the 97.27 second-submission result remains the baseline.
+
+### Remaining risks
+
+- The planner and stylesheet retain the documented complexity; their broad refactoring is higher risk than the targeted type-safety fixes.
+- Live Gemini semantic quality, browser end-to-end behavior, Lighthouse/axe, and real-world provider behavior are not established by the local unit/build checks.
+- Final readiness is conditional on complete validation and confirming there are no critical regressions.
