@@ -97,6 +97,14 @@ dashboard.
 
 Shared components:
 
+- `PageHeading` — the one eyebrow → title → purpose header every route uses, with an optional trailing
+  control (the refresh button). Pages cannot drift apart in hierarchy.
+- `RefreshButton` — provider refresh with one label everywhere and the state change announced in text
+- `KeyReadings` — the compact label/value chips under a page headline, rendered as a labelled list
+- `AqiGauge` — the half-dial share of the 0–500 scale; decorative (`aria-hidden`) because the number is
+  always printed next to it
+- `SourceLinks` — the only renderer for AI source lists; links come from `constants/sources.ts`, so model
+  output can never introduce a URL
 - `AqiBadge` — category + number + colour, never colour alone; explicit unavailable state
 - `DataProvenance` — provider note (with stale variant) and the separate official-observation card
 - `DayTimeline` — the dashboard's "what happens today" row: now, cleaner window, higher-pollution window,
@@ -106,6 +114,13 @@ Shared components:
 - `ProfileForm` — household and lifestyle sections, reused by onboarding and settings
 - `ErrorBoundary` — catches render failures, never logs household data
 
+`src/components/impact/` holds the four simulator panels (`TransportPanel`, `ExposurePanel`, `IndoorPanel`,
+`AlternativesPanel` + `AlternativeCard`). `src/pages/ImpactSimulator.tsx` owns only the tab state, the input
+state and the derived values, so each scenario can be read — and tested — on its own.
+
+`src/hooks/useTransientFlag.ts` is the single "saved / copied" confirmation timer: it clears on unmount and on
+re-trigger, so a page change cannot leave a pending `setState` behind.
+
 The dashboard is ordered by decision value, not by data type: priority headline → the day's three windows →
 the three actions → household reasoning → the raw pollutant/weather cards → provenance. The number is evidence
 for the advice, never the headline.
@@ -114,9 +129,16 @@ The same rule applies on the other routes. `AirQuality` opens with a "what this 
 AQI card, and the official-observation card stays a separate section below it. `DailyPlanner` shows the
 deterministic plan (with progress) first and the optional Gemini brief last, because the plan is authoritative
 and the brief is wording on top of it — an empty "generate brief" card at the top of the page inverted that.
+Each planner action also links to the surface that models it (`/impact` for commute emissions, `/indoor` for
+filtration sizing, `/air-quality` for the hourly forecast), so an action is not a dead end.
 `IndoorAir` states the short answer (source control first, sized CADR for this room) above the configurator.
 `FamilyProtection` sorts household-applicable groups ahead of general guidance, and `AIAdvisor` sends a
-suggested question on the first tap instead of only filling the input.
+suggested question on the first tap instead of only filling the input. Its suggestions are derived from the
+current category and the saved household, so the first question is always one the classifier can route.
+
+`FamilyProtection` also carries the share card: `utils/share.ts` builds a plain-text summary from public model
+values and the planner windows, deliberately excluding the household-specific recommendations (school, older
+adults, outdoor worker) so a forwarded message does not disclose who lives in the home.
 
 ### 2.6 Edge functions — `api/`
 
@@ -142,9 +164,9 @@ provider overload, so `/api/chat` and `/api/plan` cannot drift apart.
 
 | Chunk | Raw | Gzip |
 | --- | --- | --- |
-| `index` (app shell + dashboard) | ~404 kB | ~126 kB |
-| `AirQuality` (Recharts) | ~443 kB | ~124 kB |
-| other pages | 0.5–11 kB each | 0.3–4.7 kB each |
+| `index` (app shell + dashboard) | ~413 kB | ~129 kB |
+| `AirQuality` (Recharts) | ~444 kB | ~125 kB |
+| other pages | 0.5–26 kB each | 0.3–8 kB each |
 
 - The charting library is isolated in the AirQuality chunk, so Recharts is not downloaded until the user opens
   the air-quality page (or the lazy route is prefetched).
@@ -174,9 +196,14 @@ A top-level `ErrorBoundary` catches render crashes. Provider failures never cras
 
 ## 5. Design system
 
-`src/index.css` contains the whole visual system: tokens (`--forest`, `--sage`, `--cream`, `--line`, …),
-layout, components and responsive rules. Tailwind v4 is installed and imported at the top of the file, but
-component styling is written in the custom CSS layer; do not mix paradigms gratuitously.
+`src/index.css` contains the whole visual system: tokens (`--forest`, `--sage`, `--cream`, `--line`, `--muted`,
+`--muted-strong`, …), layout, components and responsive rules. Tailwind v4 is installed and imported at the top
+of the file, but component styling is written in the custom CSS layer; do not mix paradigms gratuitously.
+
+Secondary text uses two audited tokens rather than ad-hoc greys: `--muted` (#626c65, ≥4.8:1 on white, cream
+and the tinted panels) and `--muted-strong` (#4f5b53, ≥6.2:1) for the small uppercase labels and eyebrows.
+Light-on-dark text (the brand mark, the mask card) is intentionally exempt because it is measured against a
+dark surface, not white. Re-check with a contrast calculator if you change a token.
 
 Breakpoints: 1050 px (two-column → single column for dense grids) and 760 px (sidebar becomes off-canvas,
 dialogs go full width, chips and stat pills hide). `prefers-reduced-motion` disables all animation.

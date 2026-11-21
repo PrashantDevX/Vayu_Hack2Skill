@@ -10,19 +10,23 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowRight, RefreshCw } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { AqiBadge } from '../components/AqiBadge'
+import { AqiGauge } from '../components/AqiGauge'
+import { KeyReadings } from '../components/KeyReadings'
+import { PageHeading } from '../components/PageHeading'
+import { RefreshButton } from '../components/RefreshButton'
 import { OfficialCard, ProvenanceNote } from '../components/DataProvenance'
-import { CATEGORY_CLASS, CATEGORY_SUMMARY } from '../constants/aqi'
-import { dominantPollutant, formatPollutantValue } from '../utils/aqi'
+import { CATEGORY_SUMMARY } from '../constants/aqi'
+import { categoryBand, dominantPollutant, formatPollutantValue } from '../utils/aqi'
 import { formatObservedAt } from '../utils/date'
 
 export default function AirQuality() {
   const { air, location, refresh, planner } = useApp()
   const assessment = air.data?.model.assessment
   const dominant = assessment ? dominantPollutant(assessment) : null
-  const band = assessment?.category ? CATEGORY_CLASS[assessment.category] : 'unavailable'
+  const band = categoryBand(assessment?.category)
   const chartData = (air.data?.model.hourly ?? []).map(point => ({
     label: point.label,
     pm25: point.pm25,
@@ -31,17 +35,12 @@ export default function AirQuality() {
 
   return (
     <div className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">DATA &amp; PROVENANCE</p>
-          <h1>Air quality</h1>
-          <p>Model estimates and official observations for {location.city}, shown separately.</p>
-        </div>
-        <button type="button" className="secondary-button" onClick={refresh} disabled={air.refreshing}>
-          <RefreshCw size={16} className={air.refreshing ? 'spin' : ''} aria-hidden="true" />
-          {air.refreshing ? 'Refreshing…' : 'Refresh data'}
-        </button>
-      </div>
+      <PageHeading
+        eyebrow="DATA & PROVENANCE"
+        title="Air quality"
+        description={`Model estimates and official observations for ${location.city}, shown separately.`}
+        action={<RefreshButton onClick={refresh} refreshing={air.refreshing} />}
+      />
 
       {!air.data && air.loading && <p className="loading-copy" role="status">Retrieving provider data…</p>}
       {!air.data && !air.loading && (
@@ -66,24 +65,25 @@ export default function AirQuality() {
                     ? CATEGORY_SUMMARY[assessment.category]
                     : 'Estimated index available; category unavailable'}
               </h2>
-              <ul className="hero-chips" aria-label="Key readings">
-                <li>
-                  <small>Estimated AQI</small>
-                  <strong>{assessment.aqi ?? 'Unavailable'}</strong>
-                </li>
-                <li>
-                  <small>Category</small>
-                  <strong>{assessment.category ?? 'Insufficient coverage'}</strong>
-                </li>
-                <li>
-                  <small>Dominant pollutant</small>
-                  <strong>{dominant ? `${dominant.label} · ${formatPollutantValue(dominant.value, dominant.key)} ${dominant.unit}` : 'Unavailable'}</strong>
-                </li>
-                <li>
-                  <small>Cleaner window</small>
-                  <strong>{planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : 'Unavailable'}</strong>
-                </li>
-              </ul>
+              <KeyReadings
+                label="Key readings"
+                items={[
+                  { label: 'Estimated AQI', value: assessment.aqi ?? 'Unavailable' },
+                  { label: 'Category', value: assessment.category ?? 'Insufficient coverage' },
+                  {
+                    label: 'Dominant pollutant',
+                    value: dominant
+                      ? `${dominant.label} · ${formatPollutantValue(dominant.value, dominant.key)} ${dominant.unit}`
+                      : 'Unavailable',
+                  },
+                  {
+                    label: 'Cleaner window',
+                    value: planner.bestWindow
+                      ? `${planner.bestWindow.start}–${planner.bestWindow.end}`
+                      : 'Unavailable',
+                  },
+                ]}
+              />
               <p className="data-note">
                 Estimated CPCB-style index computed from Open-Meteo CAMS model fields. It is not an official CPCB
                 station AQI, and the official card further down stays separate.
@@ -113,9 +113,7 @@ export default function AirQuality() {
                   <strong>{assessment.aqi ?? '—'}</strong>
                   <span>{assessment.aqi === null ? 'No overall index' : 'Estimated index'}</span>
                 </div>
-                <div className="aqi-gauge" aria-hidden="true">
-                  <div style={{ '--progress': `${Math.min((assessment.aqi ?? 0) / 500 * 100, 100)}%` } as React.CSSProperties} />
-                </div>
+                <AqiGauge aqi={assessment.aqi} />
               </div>
               <p className="data-time">
                 Provider update: {formatObservedAt(air.data.model.fetchedAt)} ·{' '}

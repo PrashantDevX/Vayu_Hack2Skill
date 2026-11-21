@@ -16,7 +16,6 @@ const SOURCES = {
   cpcb: 'CPCB_AQI_METHODOLOGY',
   who: 'WHO_AIR_QUALITY_GUIDELINES',
   cams: 'OPEN_METEO_MODEL',
-  health: 'WHO_AIR_QUALITY_GUIDELINES',
 } as const
 
 const BASE_LIMITATION =
@@ -79,8 +78,14 @@ function describeContext(assessment: AqiAssessment, best: PollutionWindow | null
   return `Estimated CPCB-style model AQI ${assessment.aqi} (${assessment.category}). ${dominantText}. ${windowText}${worstText}.`
 }
 
-function recommendation(input: Recommendation): Recommendation {
-  return input
+/** Household members who benefit, derived only from the saved profile. */
+function beneficiariesFor(profile: Profile, exclude: readonly string[] = []): string[] {
+  const household = ['Everyone in the household']
+  if (profile.children > 0) household.push('Children')
+  if (profile.elderly > 0) household.push('Older adults')
+  if (profile.outdoorWorker) household.push('Outdoor worker')
+  if (profile.respiratorySensitivity || profile.cardiovascularSensitivity) household.push('Sensitive adults')
+  return household.filter(item => !exclude.includes(item))
 }
 
 export interface PlanInput {
@@ -103,11 +108,7 @@ export function buildPlanner(input: PlanInput): PlannerResult {
   const isVeryHigh = aqi !== null && aqi > 300
   const bestLabel = best ? `${best.start}–${best.end}` : 'a lower-pollution forecast window, once available'
   const worstLabel = worst ? `${worst.start}–${worst.end}` : 'the highest-pollution forecast window'
-  const beneficiaries: string[] = ['Everyone in the household']
-  if (profile.children > 0) beneficiaries.push('Children')
-  if (profile.elderly > 0) beneficiaries.push('Older adults')
-  if (profile.outdoorWorker) beneficiaries.push('Outdoor worker')
-  if (profile.respiratorySensitivity || profile.cardiovascularSensitivity) beneficiaries.push('Sensitive adults')
+  const householdBeneficiaries = beneficiariesFor(profile)
 
   const indoorBudget = profile.budget
   const cadr = estimateCadr({ areaSqFt: profile.roomAreaSqFt })
@@ -133,183 +134,202 @@ export function buildPlanner(input: PlanInput): PlannerResult {
     ? `Check the hourly forecast before reopening windows. If ${bestLabel} still has an elevated index, keep windows closed and run filtration or source control.`
     : `Open windows briefly during ${bestLabel}, then close them if outdoor levels rise.`
 
+  // Each recommendation is declared once, then composed in reading order below.
+  const morning: Recommendation = {
+    id: 'morning-windows',
+    title: isElevated ? 'Protect the morning indoor environment' : 'Use the cleaner morning window',
+    category: 'morning',
+    action: morningAction,
+    suggestedTime: isElevated ? `Until ${best?.start ?? 'the next cleaner window'}` : best?.start ?? 'Morning',
+    explanation: isElevated
+      ? 'Outdoor particulate levels are elevated. Closing windows reduces outdoor particle ingress while indoor cooking and dust sources are controlled.'
+      : 'The forecast shows a relatively lower-pollution period, so short ventilation can refresh indoor air without a large pollution penalty.',
+    environmentalContext: context,
+    beneficiaries: [...householdBeneficiaries],
+    cost: 'Free',
+    effort: 'Low',
+    benefitType: 'Lower indoor exposure during a higher-pollution period',
+    evidenceLevel: 'Established',
+    limitations: `${BASE_LIMITATION} Ventilation decisions must balance outdoor pollution with indoor cooking, damp and occupancy sources.`,
+    sources: [SOURCES.cpcb, SOURCES.cams],
+  }
+
+  const commute: Recommendation = {
+    id: 'commute-lower-exposure',
+    title: 'Choose the lower-exposure commute',
+    category: 'commute',
+    action: commuteAdvice,
+    suggestedTime: `Departure around ${best?.start ?? 'a lower-forecast window'}`,
+    explanation:
+      'Roadside concentrations can be higher than city-wide model values, and solo motorised trips add personal emissions. Public transport, carpooling and trip combining reduce both.',
+    environmentalContext: `${context} Your saved commute is ${profile.commute}, ${profile.commuteDistanceKm} km one way.`,
+    beneficiaries: beneficiariesFor(profile, ['Children']),
+    cost: profile.commute === 'Metro' || profile.commute === 'Bus' ? 'Under ₹1,500' : 'Free',
+    effort: 'Medium',
+    benefitType: 'Lower personal transport emissions and roadside exposure',
+    evidenceLevel: 'Likely',
+    limitations: `${BASE_LIMITATION} Mode shift does not instantly change city-wide AQI. Safety, trip length and service availability still matter.`,
+    sources: [SOURCES.who, SOURCES.cams],
+  }
+
+  const outdoor: Recommendation = {
+    id: 'outdoor-activity',
+    title: isVeryHigh ? 'Move exercise indoors' : isElevated ? 'Keep outdoor exercise light and short' : 'Use the cleaner outdoor window',
+    category: 'outdoor',
+    action: isVeryHigh
+      ? 'Avoid strenuous outdoor exercise. Use an indoor activity and keep essential outdoor trips short.'
+      : isElevated
+        ? `If you exercise outdoors, choose ${bestLabel} and reduce intensity and duration. Children and sensitive adults should use indoor alternatives.`
+        : `Outdoor activity is reasonable for most people; prefer ${bestLabel} and avoid busy roads.`,
+    suggestedTime: bestLabel,
+    explanation:
+      'Breathing rate rises during exercise, so the same outdoor concentration can mean a larger exposure. Timing activity to a lower-forecast window reduces the exposure proxy.',
+    environmentalContext: context,
+    beneficiaries: [...householdBeneficiaries],
+    cost: 'Free',
+    effort: 'Low',
+    benefitType: 'Lower exposure during physical activity',
+    evidenceLevel: 'Likely',
+    limitations: `${BASE_LIMITATION} This is exposure-time guidance, not an inhaled-dose or medical-risk calculation. Follow clinician advice for existing conditions.`,
+    sources: [SOURCES.who, SOURCES.cams],
+  }
+
+  const school: Recommendation | null =
+    profile.children > 0
+      ? {
+          id: 'school-protection',
+          title: 'Plan the school commute around cleaner air',
+          category: 'school',
+          action: isSevere
+            ? 'Keep outdoor school travel short, avoid strenuous games, and use a well-fitting particulate respirator for essential travel if local guidance allows. Do not rely on masks to replace exposure reduction.'
+            : `Use the cleaner travel window ${bestLabel}, prefer a low-traffic route, and keep outdoor play flexible if conditions worsen.`,
+          suggestedTime: bestLabel,
+          explanation:
+            'Children breathe more air relative to their body size and may spend more time outdoors at school. Route and timing choices can reduce exposure without disrupting school.',
+          environmentalContext: context,
+          beneficiaries: ['Children', 'School-going students'],
+          cost: 'Free',
+          effort: 'Low',
+          benefitType: 'Lower school-travel and play exposure',
+          evidenceLevel: 'Likely',
+          limitations: `${BASE_LIMITATION} Mask fit matters; a loose mask provides little benefit. Follow school and local public-health instructions.`,
+          sources: [SOURCES.who],
+        }
+      : null
+
+  const indoor: Recommendation = {
+    id: 'indoor-source-control',
+    title: 'Control indoor sources first',
+    category: 'indoor',
+    action:
+      profile.cookingFuel === 'Biomass or wood' || profile.cookingFuel === 'Mixed'
+        ? 'Use the kitchen exhaust every time you cook. Avoid incense, indoor smoking and any unnecessary combustion; discuss cleaner cooking options where feasible.'
+        : 'Run the kitchen exhaust during cooking, avoid incense and indoor smoking, and damp-dust or mop instead of dry sweeping.',
+    suggestedTime: 'During cooking and cleaning',
+    explanation:
+      'Indoor combustion and resuspended dust can keep indoor particle levels high even when windows are closed. Source control is the first step before filtration.',
+    environmentalContext: context,
+    beneficiaries: [...householdBeneficiaries],
+    cost: 'Free',
+    effort: 'Low',
+    benefitType: 'Lower indoor particle sources',
+    evidenceLevel: 'Established',
+    limitations: `${BASE_LIMITATION} Actual indoor concentrations depend on the home, cooking, occupancy and ventilation; no indoor sensor reading is assumed.`,
+    sources: [SOURCES.who],
+  }
+
+  const elderly: Recommendation | null =
+    profile.elderly > 0
+      ? {
+          id: 'elderly-precautions',
+          title: 'Reduce exertion for older household members',
+          category: 'elderly',
+          action: isElevated
+            ? 'Move errands and walks to the cleaner forecast window, keep essential medicines and care plans accessible, and seek medical advice if symptoms worsen.'
+            : 'Normal activity is reasonable, but prefer quieter routes and the cleaner forecast window.',
+          suggestedTime: bestLabel,
+          explanation:
+            'Older adults and people with heart or lung conditions can be more sensitive to particulate exposure. Reducing exertion during higher-pollution periods is a practical precaution.',
+          environmentalContext: context,
+          beneficiaries: ['Older adults', 'Sensitive adults'],
+          cost: 'Free',
+          effort: 'Low',
+          benefitType: 'Lower exposure during routine activity',
+          evidenceLevel: 'Established',
+          limitations: `${BASE_LIMITATION} This does not replace medical advice or emergency care.`,
+          sources: [SOURCES.who],
+        }
+      : null
+
+  const filtration: Recommendation = {
+    id: 'filtration',
+    title: profile.hasPurifier ? 'Maintain appropriately sized filtration' : 'Size filtration to the room',
+    category: 'night',
+    action: purifierAdvice,
+    suggestedTime: 'Evening and overnight',
+    explanation: `A ${profile.roomAreaSqFt} sq ft room at a 9 ft ceiling is about ${cadr.volumeM3} m³. At ${cadr.achLow}–${cadr.achHigh} air changes per hour, the unit should deliver roughly ${cadr.cadrM3hLow}–${cadr.cadrM3hHigh} m³/h CADR.`,
+    environmentalContext: context,
+    beneficiaries: beneficiariesFor(profile, ['Outdoor worker']),
+    cost: profile.hasPurifier ? 'Free' : indoorBudget,
+    effort: profile.hasPurifier ? 'Low' : 'Medium',
+    benefitType: 'Lower indoor particulate exposure when the unit is correctly sized and maintained',
+    evidenceLevel: 'Established',
+    limitations: `${BASE_LIMITATION} Filtration does not remove gases reliably unless the unit is designed for them. Never use ozone generators or unsafe DIY electrical devices.`,
+    sources: [SOURCES.who],
+  }
+
+  const evening: Recommendation = {
+    id: 'evening-ventilation',
+    title: 'Recheck before evening ventilation',
+    category: 'evening',
+    action: eveningAction,
+    suggestedTime: bestLabel,
+    explanation:
+      'Evening conditions can change quickly. Using the hourly forecast avoids the common mistake of assuming every evening is cleaner.',
+    environmentalContext: context,
+    beneficiaries: [...householdBeneficiaries],
+    cost: 'Free',
+    effort: 'Low',
+    benefitType: 'Avoid unnecessary outdoor particle ingress',
+    evidenceLevel: 'Likely',
+    limitations: `${BASE_LIMITATION} If indoor cooking or damp sources are high, brief targeted ventilation may still be appropriate.`,
+    sources: [SOURCES.cams, SOURCES.who],
+  }
+
+  const outdoorWorker: Recommendation | null = profile.outdoorWorker
+    ? {
+        id: 'outdoor-worker',
+        title: 'Schedule outdoor work breaks',
+        category: 'outdoor',
+        action: isElevated
+          ? `Shift strenuous tasks away from ${worstLabel}, take breaks in a cleaner indoor area, and discuss exposure controls with your employer.`
+          : `Use the cleaner window ${bestLabel} for strenuous tasks and keep water and breaks available.`,
+        suggestedTime: bestLabel,
+        explanation:
+          'Outdoor workers cannot always choose their hours. Task rotation, breaks and indoor rest areas can still reduce the exposure proxy.',
+        environmentalContext: context,
+        beneficiaries: ['Outdoor worker'],
+        cost: 'Free',
+        effort: 'Medium',
+        benefitType: 'Lower occupational exposure',
+        evidenceLevel: 'Likely',
+        limitations: `${BASE_LIMITATION} Workplace safety duties and local labour guidance take precedence.`,
+        sources: [SOURCES.who, SOURCES.cpcb],
+      }
+    : null
+
+  // Reading order: the day, then household-specific additions in their place.
   const recommendations: Recommendation[] = [
-    recommendation({
-      id: 'morning-windows',
-      title: isElevated ? 'Protect the morning indoor environment' : 'Use the cleaner morning window',
-      category: 'morning',
-      action: morningAction,
-      suggestedTime: isElevated ? `Until ${best?.start ?? 'the next cleaner window'}` : best?.start ?? 'Morning',
-      explanation: isElevated
-        ? 'Outdoor particulate levels are elevated. Closing windows reduces outdoor particle ingress while indoor cooking and dust sources are controlled.'
-        : 'The forecast shows a relatively lower-pollution period, so short ventilation can refresh indoor air without a large pollution penalty.',
-      environmentalContext: context,
-      beneficiaries,
-      cost: 'Free',
-      effort: 'Low',
-      benefitType: 'Lower indoor exposure during a higher-pollution period',
-      evidenceLevel: 'Established',
-      limitations: `${BASE_LIMITATION} Ventilation decisions must balance outdoor pollution with indoor cooking, damp and occupancy sources.`,
-      sources: [SOURCES.cpcb, SOURCES.cams],
-    }),
-    recommendation({
-      id: 'commute-lower-exposure',
-      title: 'Choose the lower-exposure commute',
-      category: 'commute',
-      action: commuteAdvice,
-      suggestedTime: `Departure around ${best?.start ?? 'a lower-forecast window'}`,
-      explanation:
-        'Roadside concentrations can be higher than city-wide model values, and solo motorised trips add personal emissions. Public transport, carpooling and trip combining reduce both.',
-      environmentalContext: `${context} Your saved commute is ${profile.commute}, ${profile.commuteDistanceKm} km one way.`,
-      beneficiaries: beneficiaries.filter(item => item !== 'Children'),
-      cost: profile.commute === 'Metro' || profile.commute === 'Bus' ? 'Under ₹1,500' : 'Free',
-      effort: 'Medium',
-      benefitType: 'Lower personal transport emissions and roadside exposure',
-      evidenceLevel: 'Likely',
-      limitations: `${BASE_LIMITATION} Mode shift does not instantly change city-wide AQI. Safety, trip length and service availability still matter.`,
-      sources: [SOURCES.health, SOURCES.cams],
-    }),
-    recommendation({
-      id: 'outdoor-activity',
-      title: isVeryHigh ? 'Move exercise indoors' : isElevated ? 'Keep outdoor exercise light and short' : 'Use the cleaner outdoor window',
-      category: 'outdoor',
-      action: isVeryHigh
-        ? 'Avoid strenuous outdoor exercise. Use an indoor activity and keep essential outdoor trips short.'
-        : isElevated
-          ? `If you exercise outdoors, choose ${bestLabel} and reduce intensity and duration. Children and sensitive adults should use indoor alternatives.`
-          : `Outdoor activity is reasonable for most people; prefer ${bestLabel} and avoid busy roads.`,
-      suggestedTime: bestLabel,
-      explanation:
-        'Breathing rate rises during exercise, so the same outdoor concentration can mean a larger exposure. Timing activity to a lower-forecast window reduces the exposure proxy.',
-      environmentalContext: context,
-      beneficiaries,
-      cost: 'Free',
-      effort: 'Low',
-      benefitType: 'Lower exposure during physical activity',
-      evidenceLevel: 'Likely',
-      limitations: `${BASE_LIMITATION} This is exposure-time guidance, not an inhaled-dose or medical-risk calculation. Follow clinician advice for existing conditions.`,
-      sources: [SOURCES.who, SOURCES.cams],
-    }),
-    recommendation({
-      id: 'indoor-source-control',
-      title: 'Control indoor sources first',
-      category: 'indoor',
-      action:
-        profile.cookingFuel === 'Biomass or wood' || profile.cookingFuel === 'Mixed'
-          ? 'Use the kitchen exhaust every time you cook. Avoid incense, indoor smoking and any unnecessary combustion; discuss cleaner cooking options where feasible.'
-          : 'Run the kitchen exhaust during cooking, avoid incense and indoor smoking, and damp-dust or mop instead of dry sweeping.',
-      suggestedTime: 'During cooking and cleaning',
-      explanation:
-        'Indoor combustion and resuspended dust can keep indoor particle levels high even when windows are closed. Source control is the first step before filtration.',
-      environmentalContext: context,
-      beneficiaries,
-      cost: 'Free',
-      effort: 'Low',
-      benefitType: 'Lower indoor particle sources',
-      evidenceLevel: 'Established',
-      limitations: `${BASE_LIMITATION} Actual indoor concentrations depend on the home, cooking, occupancy and ventilation; no indoor sensor reading is assumed.`,
-      sources: [SOURCES.who, SOURCES.health],
-    }),
-    recommendation({
-      id: 'filtration',
-      title: profile.hasPurifier ? 'Maintain appropriately sized filtration' : 'Size filtration to the room',
-      category: 'night',
-      action: purifierAdvice,
-      suggestedTime: 'Evening and overnight',
-      explanation: `A ${profile.roomAreaSqFt} sq ft room at a 9 ft ceiling is about ${cadr.volumeM3} m³. At ${cadr.achLow}–${cadr.achHigh} air changes per hour, the unit should deliver roughly ${cadr.cadrM3hLow}–${cadr.cadrM3hHigh} m³/h CADR.`,
-      environmentalContext: context,
-      beneficiaries: beneficiaries.filter(item => item !== 'Outdoor worker'),
-      cost: profile.hasPurifier ? 'Free' : indoorBudget,
-      effort: profile.hasPurifier ? 'Low' : 'Medium',
-      benefitType: 'Lower indoor particulate exposure when the unit is correctly sized and maintained',
-      evidenceLevel: 'Established',
-      limitations: `${BASE_LIMITATION} Filtration does not remove gases reliably unless the unit is designed for them. Never use ozone generators or unsafe DIY electrical devices.`,
-      sources: [SOURCES.who, SOURCES.health],
-    }),
-    recommendation({
-      id: 'evening-ventilation',
-      title: 'Recheck before evening ventilation',
-      category: 'evening',
-      action: eveningAction,
-      suggestedTime: bestLabel,
-      explanation:
-        'Evening conditions can change quickly. Using the hourly forecast avoids the common mistake of assuming every evening is cleaner.',
-      environmentalContext: context,
-      beneficiaries,
-      cost: 'Free',
-      effort: 'Low',
-      benefitType: 'Avoid unnecessary outdoor particle ingress',
-      evidenceLevel: 'Likely',
-      limitations: `${BASE_LIMITATION} If indoor cooking or damp sources are high, brief targeted ventilation may still be appropriate.`,
-      sources: [SOURCES.cams, SOURCES.health],
-    }),
+    morning,
+    commute,
+    outdoor,
+    ...(school ? [school] : []),
+    indoor,
+    ...(elderly ? [elderly] : []),
+    filtration,
+    evening,
+    ...(outdoorWorker ? [outdoorWorker] : []),
   ]
-
-  if (profile.children > 0) {
-    recommendations.splice(3, 0, recommendation({
-      id: 'school-protection',
-      title: 'Plan the school commute around cleaner air',
-      category: 'school',
-      action: isSevere
-        ? 'Keep outdoor school travel short, avoid strenuous games, and use a well-fitting particulate respirator for essential travel if local guidance allows. Do not rely on masks to replace exposure reduction.'
-        : `Use the cleaner travel window ${bestLabel}, prefer a low-traffic route, and keep outdoor play flexible if conditions worsen.`,
-      suggestedTime: bestLabel,
-      explanation:
-        'Children breathe more air relative to their body size and may spend more time outdoors at school. Route and timing choices can reduce exposure without disrupting school.',
-      environmentalContext: context,
-      beneficiaries: ['Children', 'School-going students'],
-      cost: 'Free',
-      effort: 'Low',
-      benefitType: 'Lower school-travel and play exposure',
-      evidenceLevel: 'Likely',
-      limitations: `${BASE_LIMITATION} Mask fit matters; a loose mask provides little benefit. Follow school and local public-health instructions.`,
-      sources: [SOURCES.who, SOURCES.health],
-    }))
-  }
-
-  if (profile.elderly > 0) {
-    recommendations.splice(5, 0, recommendation({
-      id: 'elderly-precautions',
-      title: 'Reduce exertion for older household members',
-      category: 'elderly',
-      action: isElevated
-        ? 'Move errands and walks to the cleaner forecast window, keep essential medicines and care plans accessible, and seek medical advice if symptoms worsen.'
-        : 'Normal activity is reasonable, but prefer quieter routes and the cleaner forecast window.',
-      suggestedTime: bestLabel,
-      explanation:
-        'Older adults and people with heart or lung conditions can be more sensitive to particulate exposure. Reducing exertion during higher-pollution periods is a practical precaution.',
-      environmentalContext: context,
-      beneficiaries: ['Older adults', 'Sensitive adults'],
-      cost: 'Free',
-      effort: 'Low',
-      benefitType: 'Lower exposure during routine activity',
-      evidenceLevel: 'Established',
-      limitations: `${BASE_LIMITATION} This does not replace medical advice or emergency care.`,
-      sources: [SOURCES.who, SOURCES.health],
-    }))
-  }
-
-  if (profile.outdoorWorker) {
-    recommendations.push(recommendation({
-      id: 'outdoor-worker',
-      title: 'Schedule outdoor work breaks',
-      category: 'outdoor',
-      action: isElevated
-        ? `Shift strenuous tasks away from ${worstLabel}, take breaks in a cleaner indoor area, and discuss exposure controls with your employer.`
-        : `Use the cleaner window ${bestLabel} for strenuous tasks and keep water and breaks available.`,
-      suggestedTime: bestLabel,
-      explanation:
-        'Outdoor workers cannot always choose their hours. Task rotation, breaks and indoor rest areas can still reduce the exposure proxy.',
-      environmentalContext: context,
-      beneficiaries: ['Outdoor worker'],
-      cost: 'Free',
-      effort: 'Medium',
-      benefitType: 'Lower occupational exposure',
-      evidenceLevel: 'Likely',
-      limitations: `${BASE_LIMITATION} Workplace safety duties and local labour guidance take precedence.`,
-      sources: [SOURCES.health, SOURCES.cpcb],
-    }))
-  }
 
   const categoryText = category ? CATEGORY_SUMMARY[category] : 'AQI is unavailable because of insufficient pollutant coverage.'
   const contextSummary = `${categoryText} ${context}`

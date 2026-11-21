@@ -8,7 +8,6 @@ import {
   Info,
   Leaf,
   MapPin,
-  RefreshCw,
   ShieldCheck,
   Sun,
   TrendingDown,
@@ -16,11 +15,14 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { AqiBadge } from '../components/AqiBadge'
+import { AqiGauge } from '../components/AqiGauge'
 import { DayTimeline } from '../components/DayTimeline'
+import { KeyReadings } from '../components/KeyReadings'
+import { PageHeading } from '../components/PageHeading'
 import { ProvenanceNote } from '../components/DataProvenance'
-import { CATEGORY_CLASS } from '../constants/aqi'
+import { RefreshButton } from '../components/RefreshButton'
 import { greetingForHour } from '../utils/date'
-import { dominantPollutant, formatPollutantValue } from '../utils/aqi'
+import { categoryBand, dominantPollutant, formatPollutantValue } from '../utils/aqi'
 
 function priorityHeadline(aqi: number | null | undefined): string {
   if (aqi === null || aqi === undefined) return 'Reduce unnecessary exposure until provider data is confirmed'
@@ -77,21 +79,16 @@ export default function Dashboard() {
   const dominant = assessment ? dominantPollutant(assessment) : null
   const topActions = ['morning-windows', 'commute-lower-exposure', 'indoor-source-control']
   const completedActions = topActions.filter(id => checklist.includes(id)).length
-  const band = assessment?.category ? CATEGORY_CLASS[assessment.category] : 'unavailable'
+  const band = categoryBand(assessment?.category)
 
   return (
     <div className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">TODAY · {now.toLocaleDateString(undefined, { day: 'numeric', month: 'long' }).toUpperCase()}</p>
-          <h1>{greetingForHour(now.getHours())}</h1>
-          <p>Here is what matters for your household in {location.city} today.</p>
-        </div>
-        <button type="button" className="secondary-button" onClick={refresh} disabled={air.refreshing}>
-          <RefreshCw size={16} className={air.refreshing ? 'spin' : ''} aria-hidden="true" />
-          {air.refreshing ? 'Refreshing…' : 'Refresh data'}
-        </button>
-      </div>
+      <PageHeading
+        eyebrow={`TODAY · ${now.toLocaleDateString(undefined, { day: 'numeric', month: 'long' }).toUpperCase()}`}
+        title={greetingForHour(now.getHours())}
+        description={`Here is what matters for your household in ${location.city} today.`}
+        action={<RefreshButton onClick={refresh} refreshing={air.refreshing} />}
+      />
 
       {air.error && (
         <div className="status-banner warning" role="alert">
@@ -122,21 +119,19 @@ export default function Dashboard() {
               <p className="hero-reason">
                 {priorityReason(assessment?.aqi, assessment?.category, planner.bestWindow)}
               </p>
-              <ul className="hero-chips" aria-label="Key readings">
-                <li>
-                  <small>Estimated AQI</small>
-                  <strong>{assessment?.aqi ?? 'Unavailable'}</strong>
-                </li>
-                <li>
-                  <small>Category</small>
-                  <strong>{assessment?.category ?? 'Insufficient coverage'}</strong>
-                </li>
-                <li>
-                  <small>Cleaner window</small>
-                  <strong>{planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : 'Unavailable'}</strong>
-                </li>
-              </ul>
-              <div className="hero-actions">
+              <KeyReadings
+                label="Key readings"
+                items={[
+                  { label: 'Estimated AQI', value: assessment?.aqi ?? 'Unavailable' },
+                  { label: 'Category', value: assessment?.category ?? 'Insufficient coverage' },
+                  {
+                    label: 'Cleaner window',
+                    value: planner.bestWindow
+                      ? `${planner.bestWindow.start}–${planner.bestWindow.end}`
+                      : 'Unavailable',
+                  },
+                ]}
+              /><div className="hero-actions">
                 <Link className="primary-button" to="/planner">
                   Open today&apos;s plan <ArrowRight size={16} aria-hidden="true" />
                 </Link>
@@ -222,9 +217,7 @@ export default function Dashboard() {
                   <strong>{assessment?.aqi ?? '—'}</strong>
                   <span>{assessment?.aqi === null || assessment?.aqi === undefined ? 'No overall index' : 'Estimated index'}</span>
                 </div>
-                <div className="aqi-gauge" aria-hidden="true">
-                  <div style={{ '--progress': `${Math.min((assessment?.aqi ?? 0) / 500 * 100, 100)}%` } as React.CSSProperties} />
-                </div>
+                <AqiGauge aqi={assessment?.aqi ?? null} />
               </div>
 
               <div className="pollutant-row">

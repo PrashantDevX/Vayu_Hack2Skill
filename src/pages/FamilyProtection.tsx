@@ -1,15 +1,29 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Briefcase, GraduationCap, HeartPulse, ShieldCheck, Users } from 'lucide-react'
+import { ArrowRight, Briefcase, ClipboardCopy, GraduationCap, HeartPulse, Share2, ShieldCheck, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { PageHeading } from '../components/PageHeading'
+import { useTransientFlag } from '../hooks/useTransientFlag'
 import { CATEGORY_SUMMARY } from '../constants/aqi'
+import { buildShareText, copyToClipboard } from '../utils/share'
 
 export default function FamilyProtection() {
-  const { air, profile, planner } = useApp()
+  const { air, profile, planner, location } = useApp()
+  const [copied, showCopied] = useTransientFlag()
+  const [copyFailed, setCopyFailed] = useState(false)
   const assessment = air.data?.model.assessment
   const category = assessment?.category ?? null
   const elevated = assessment?.aqi !== null && assessment?.aqi !== undefined && assessment.aqi > 100
   const severe = assessment?.aqi !== null && assessment?.aqi !== undefined && assessment.aqi > 300
   const cleanerWindow = planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : null
+  const shareText = buildShareText({ city: location.city, assessment, planner })
+
+  const share = async () => {
+    setCopyFailed(false)
+    const ok = await copyToClipboard(shareText)
+    if (ok) showCopied()
+    else setCopyFailed(true)
+  }
 
   const groups = [
     {
@@ -62,13 +76,11 @@ export default function FamilyProtection() {
 
   return (
     <div className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">FAMILY SAFETY</p>
-          <h1>Family protection</h1>
-          <p>Practical guidance for household members with different needs. Not a diagnosis or prescription.</p>
-        </div>
-      </div>
+      <PageHeading
+        eyebrow="FAMILY SAFETY"
+        title="Family protection"
+        description="Practical guidance for household members with different needs. Not a diagnosis or prescription."
+      />
 
       <div className="family-banner">
         <ShieldCheck size={25} aria-hidden="true" />
@@ -108,6 +120,38 @@ export default function FamilyProtection() {
           exposure, and should be used according to the manufacturer’s instructions. Follow local public-health
           guidance for children.
         </p>
+      </section>
+
+      <section className="share-card" aria-labelledby="share-heading">
+        <div className="card-heading">
+          <div>
+            <small>FAMILY &amp; COMMUNITY</small>
+            <h2 id="share-heading">Pass this on</h2>
+          </div>
+          <Share2 size={20} aria-hidden="true" />
+        </div>
+        <p>
+          Copy a short summary of today&apos;s reading and first actions to send to family, neighbours or a
+          community group. It uses only public model values, and actions that exist only because of your
+          household profile stay in the app.
+        </p>
+        <div className="profile-actions">
+          <button type="button" className="secondary-button" onClick={() => void share()}>
+            <ClipboardCopy size={16} aria-hidden="true" />
+            {copied ? 'Copied to clipboard' : 'Copy household guidance'}
+          </button>
+        </div>
+        <p className="data-note" role="status" aria-live="polite">
+          {copyFailed
+            ? 'Copying is blocked in this browser. Open the preview below and copy the text manually.'
+            : copied
+              ? 'Copied. Paste it into a message to your household or community group.'
+              : ''}
+        </p>
+        <details className="share-preview">
+          <summary>Preview the shared text</summary>
+          <pre>{shareText}</pre>
+        </details>
       </section>
 
       <div className="insights-grid family-links">

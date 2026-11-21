@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Database, MapPin, ShieldCheck, Trash2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { PageHeading } from '../components/PageHeading'
 import { ProfileForm } from '../components/ProfileForm'
 import { LocationDialog } from '../components/LocationDialog'
+import { useTransientFlag } from '../hooks/useTransientFlag'
 import { profileSchema } from '../utils/profile'
 import type { Profile } from '../types'
 
@@ -19,7 +21,7 @@ export default function Settings() {
     setOnboarded,
   } = useApp()
   const [draft, setDraft] = useState<Profile>(profile)
-  const [saved, setSaved] = useState(false)
+  const [saved, showSaved] = useTransientFlag()
   const [error, setError] = useState<string | null>(null)
   const [locationOpen, setLocationOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -34,8 +36,7 @@ export default function Settings() {
     }
     updateProfile(parsed.data)
     setError(null)
-    setSaved(true)
-    window.setTimeout(() => setSaved(false), 2500)
+    showSaved()
   }
 
   const clear = () => {
@@ -46,13 +47,11 @@ export default function Settings() {
 
   return (
     <div className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">PREFERENCES &amp; PRIVACY</p>
-          <h1>Settings</h1>
-          <p>Edit your household profile, location and locally stored data.</p>
-        </div>
-      </div>
+      <PageHeading
+        eyebrow="PREFERENCES & PRIVACY"
+        title="Settings"
+        description="Edit your household profile, location and locally stored data."
+      />
 
       <div className="settings-layout">
         <section className="settings-card" aria-labelledby="location-settings">

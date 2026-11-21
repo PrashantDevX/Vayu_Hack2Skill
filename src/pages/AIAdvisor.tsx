@@ -2,17 +2,36 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowRight, Bot, Send, Sparkles } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { PageHeading } from '../components/PageHeading'
+import { SourceLinks } from '../components/SourceLinks'
 import { askVayu } from '../services/chatService'
-import { SOURCE_METADATA } from '../constants/sources'
-import type { ChatMessage } from '../types'
+import { pollutantValue } from '../utils/aqi'
+import type { ChatMessage, Profile } from '../types'
 
-const SUGGESTIONS = [
-  'Is it safe to go running today?',
-  'Should I open windows tonight?',
-  'How do I choose an air purifier?',
-  'Should we take the metro instead of the car?',
-  'What should my family do when AQI is severe?',
-]
+/**
+ * Suggested questions are derived from today's reading and the saved household,
+ * not from a fixed list. Every string is also routed by `classifyChatIntent`, so
+ * a one-tap question always has a real answer — Gemini or deterministic.
+ */
+function suggestionsFor(category: string | null, profile: Profile): string[] {
+  const polluted = category === 'Poor' || category === 'Very Poor' || category === 'Severe'
+  const questions = [
+    'Is it safe to go running today?',
+    polluted ? 'What should we do indoors while AQI is this high?' : 'Should I open windows tonight?',
+  ]
+  if (profile.children > 0) {
+    questions.push('What should my child do about school and outdoor play today?')
+  } else if (profile.elderly > 0) {
+    questions.push('How should older adults in my home adjust today?')
+  }
+  questions.push(
+    profile.commute === 'Petrol car' || profile.commute === 'Two-wheeler'
+      ? 'Should we take the metro instead of the car?'
+      : 'Should we change our commute route today?',
+  )
+  questions.push('How do I choose an air purifier?')
+  return [...new Set(questions)].slice(0, 5)
+}
 
 export default function AIAdvisor() {
   const { air, planner, profile, location } = useApp()
@@ -30,7 +49,8 @@ export default function AIAdvisor() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const assessment = air.data?.model.assessment
-  const pm25 = assessment?.pollutants.find(item => item.key === 'pm25')?.value ?? null
+  const pm25 = pollutantValue(assessment?.pollutants, 'pm25')
+  const suggestions = suggestionsFor(assessment?.category ?? null, profile)
 
   const send = async (event?: FormEvent, preset?: string) => {
     event?.preventDefault()
@@ -67,13 +87,11 @@ export default function AIAdvisor() {
 
   return (
     <div className="page advisor-page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">AI ADVISOR</p>
-          <h1>How can I help protect your family?</h1>
-          <p>Grounded in provider data and household preferences. Deterministic fallback works without Gemini.</p>
-        </div>
-      </div>
+      <PageHeading
+        eyebrow="AI ADVISOR"
+        title="How can I help protect your family?"
+        description="Grounded in provider data and household preferences. Deterministic fallback works without Gemini."
+      />
 
       <div className="advisor-layout">
         <aside>
@@ -86,7 +104,7 @@ export default function AIAdvisor() {
           </div>
           <div className="suggested">
             <small>SUGGESTED QUESTIONS</small>
-            {SUGGESTIONS.map(question => (
+            {suggestions.map(question => (
               <button key={question} type="button" onClick={() => askSuggestion(question)} disabled={loading}>
                 {question}
                 <ArrowRight size={14} aria-hidden="true" />
@@ -109,10 +127,7 @@ export default function AIAdvisor() {
                     <small className="message-source">AI-assisted, checked against Vayu safety rules</small>
                   )}
                   {message.sources && message.sources.length > 0 && (
-                    <small className="message-source">Sources: {message.sources.map((id, sourceIndex) => {
-                      const source = SOURCE_METADATA[id]
-                      return <span key={id}>{sourceIndex > 0 ? ' · ' : ''}<a href={source.url} target={source.url.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{source.name}</a></span>
-                    })}</small>
+                    <small className="message-source"><SourceLinks sources={message.sources} prefix="Sources: " /></small>
                   )}
                 </div>
               </div>

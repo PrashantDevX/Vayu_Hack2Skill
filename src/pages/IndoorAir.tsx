@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { AlertTriangle, Check, Filter, Home, ShieldCheck, SlidersHorizontal, Wind } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { KeyReadings } from '../components/KeyReadings'
+import { PageHeading } from '../components/PageHeading'
+import { useTransientFlag } from '../hooks/useTransientFlag'
 import { BUDGET_BANDS } from '../constants/aqi'
 import { budgetRank, estimateCadr } from '../utils/impact'
 import type { BudgetBand } from '../types'
@@ -62,7 +65,7 @@ export default function IndoorAir() {
   const [ceiling, setCeiling] = useState(9)
   const [budget, setBudget] = useState<BudgetBand>(profile.budget)
   const [hasPurifier, setHasPurifier] = useState(profile.hasPurifier)
-  const [saved, setSaved] = useState(false)
+  const [saved, showSaved] = useTransientFlag()
 
   const vulnerable = profile.children > 0 || profile.elderly > 0 || profile.respiratorySensitivity || profile.cardiovascularSensitivity
   const cadr = estimateCadr({ areaSqFt: area, ceilingFt: ceiling, achLow: 4, achHigh: vulnerable ? 6 : 5 })
@@ -70,19 +73,16 @@ export default function IndoorAir() {
 
   const save = () => {
     updateProfile({ ...profile, roomAreaSqFt: area, budget, hasPurifier })
-    setSaved(true)
-    window.setTimeout(() => setSaved(false), 2500)
+    showSaved()
   }
 
   return (
     <div className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">HOME ENVIRONMENT</p>
-          <h1>Indoor air</h1>
-          <p>Source control first, then appropriately sized filtration. No ozone devices, no unsafe DIY.</p>
-        </div>
-      </div>
+      <PageHeading
+        eyebrow="HOME ENVIRONMENT"
+        title="Indoor air"
+        description="Source control first, then appropriately sized filtration. No ozone devices, no unsafe DIY."
+      />
 
       <section className="indoor-summary" aria-labelledby="indoor-summary-heading">
         <div>
@@ -95,24 +95,15 @@ export default function IndoorAir() {
             filtration help — and only when the unit is rated for the space.
           </p>
         </div>
-        <ul className="hero-chips" aria-label="Room sizing result">
-          <li>
-            <small>Suggested CADR</small>
-            <strong>{cadr.cadrM3hLow}–{cadr.cadrM3hHigh} m³/h</strong>
-          </li>
-          <li>
-            <small>Room volume</small>
-            <strong>{cadr.volumeM3} m³</strong>
-          </li>
-          <li>
-            <small>Air changes/hour</small>
-            <strong>{cadr.achLow}–{cadr.achHigh}</strong>
-          </li>
-          <li>
-            <small>Budget</small>
-            <strong>{budget}</strong>
-          </li>
-        </ul>
+        <KeyReadings
+          label="Room sizing result"
+          items={[
+            { label: 'Suggested CADR', value: `${cadr.cadrM3hLow}–${cadr.cadrM3hHigh} m³/h` },
+            { label: 'Room volume', value: `${cadr.volumeM3} m³` },
+            { label: 'Air changes/hour', value: `${cadr.achLow}–${cadr.achHigh}` },
+            { label: 'Budget', value: budget },
+          ]}
+        />
       </section>
 
       <div className="indoor-layout">

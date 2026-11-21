@@ -37,7 +37,7 @@ deployed Vercel project; without them the UI shows explicit "unavailable" states
 ```bash
 npm run typecheck      # tsc -b (app + node + api projects)
 npm run lint           # oxlint, zero warnings
-npm test               # 203 tests, 25 files
+npm test               # 213 tests, 26 files
 npm run test:coverage   # v8 coverage with enforced thresholds
 npm run build          # production build
 npm run check:providers # probe Gemini + data.gov.in with your .env keys
@@ -69,10 +69,10 @@ Without these, the deterministic planner, deterministic chat, and model-data das
 | **Onboarding** | Four steps: location, household, routine, then a plain-language review of what will be saved. Every field optional; defaults are valid. Stored locally only. |
 | **Overview** | Priority action as the hero, then the day's three decision points, the three tickable actions, household reasoning, and the estimated AQI/dominant pollutant/weather cards below them. |
 | **Air quality** | Model AQI card, full pollutant table with sub-indices and CPCB averaging periods, separate official-observation card, 24-hour chart plus an accessible data table. |
-| **Daily planner** | Deterministic, profile-aware actions across morning, commute, outdoor, indoor, school, elderly, evening and night, each with why/when/who/effort/cost/benefit/limitations/sources. Progress summary first; optional AI brief last. |
+| **Daily planner** | Deterministic, profile-aware actions across morning, commute, outdoor, indoor, school, elderly, evening and night, each with why/when/who/effort/cost/benefit/limitations/sources and a link to the surface that models it. Progress summary first; optional AI brief last. |
 | **Indoor air** | Source-control-first guidance filtered by budget, interactive room configurator with CADR sizing, explicit safety rules (no ozone, no unsafe DIY, no blind window-opening). |
 | **Impact simulator** | Transport emissions vs a solo-car baseline with uncertainty range and factor version; outdoor exposure-time proxy; indoor intervention comparison; sustainable alternatives for transport, household and community. |
-| **Family protection** | Guidance segmented for children, older adults, outdoor workers, respiratory and cardiovascular sensitivity, plus mask guidance. |
+| **Family protection** | Guidance segmented for children, older adults, outdoor workers, respiratory and cardiovascular sensitivity, plus mask guidance. A "pass this on" card copies a privacy-safe text summary (public model values, no household composition) for family or a community group. |
 | **AI advisor** | Conversational assistant with location, AQI, forecast windows and profile context; deterministic intent-based fallback with source labels. |
 | **Settings & privacy** | Profile editing, location change, provider status, restart onboarding, reset profile, delete all local data. |
 
@@ -84,8 +84,10 @@ Without these, the deterministic planner, deterministic chat, and model-data das
 Browser (React 19 + TypeScript + Vite)
 ├── AppContext ── profile / location / planner / checklist (localStorage, schema-validated)
 ├── useAirQuality ── fetch, cache, auto-refresh, stale handling
-├── utils/ ── AQI maths, impact maths, date handling (pure, fully tested)
-└── pages/ ── lazy-loaded routes
+├── utils/ ── AQI maths, impact maths, share summary, date handling (pure, tested)
+├── components/ ── AppShell plus the shared page primitives
+│   (PageHeading, RefreshButton, KeyReadings, AqiGauge, SourceLinks)
+└── pages/ ── lazy-loaded routes; the simulator composes components/impact/*
 
 Vercel serverless (nodejs runtime)
 ├── /api/chat  ── Zod → bounded prompt → Gemini → Zod → fallback
@@ -158,6 +160,8 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 - Native `<dialog>` modals with `aria-labelledby`, Escape handling and a labelled close button.
 - Visible `:focus-visible` outlines, colour is never the only signal (category names and numbers accompany
   colour), and `prefers-reduced-motion` disables animation.
+- Secondary text uses two audited tokens — `--muted` (≥4.8:1) and `--muted-strong` (≥6.2:1) — on white,
+  cream and the tinted panels, instead of the low-contrast greys the first draft used.
 - Layout works from 320 px up; sidebar becomes an off-canvas menu with an explicit close control.
 
 ---
@@ -166,18 +170,18 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 | Suite | Covers |
 | --- | --- |
-| `src/utils/*.test.ts` | CPCB breakpoints and coverage rule, dominance, formatting, transport maths, exposure proxy, CADR, date/locale handling, profile validation |
+| `src/utils/*.test.ts` | CPCB breakpoints and coverage rule, dominance, formatting, transport maths, exposure proxy, CADR, date/locale handling, profile validation, privacy-safe share summary |
 | `src/services/*.test.ts` | HTTP retry/timeout, cache TTL, Open-Meteo normalisation and CO conversion, hourly windowing, official mapping, geocoding, chat/plan fallback, planner personalisation |
 | `api/*.test.ts` | Request validation, method/body limits, rate limits, Gemini success + malformed + failure paths, official-record normalisation, no-secret leakage |
 | `src/App.test.tsx`, components | Integration render against a mocked provider, provenance wording, navigation, badge states |
 | `src/constants/alternatives.test.ts` | Required alternative fields, and a guard that fails if fabricated kg/tonne claims are added |
 
 ```
-Test Files  25 passed (25)
-Tests      203 passed (203)
+Test Files  26 passed (26)
+Tests      213 passed (213)
 
 Coverage (v8, utils/services/constants/api):
-Statements  94.78%   Branches 86.17%   Functions 97.67%   Lines 98.03%
+Statements  95.00%   Branches 86.59%   Functions 97.76%   Lines 98.20%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -245,15 +249,16 @@ Each requirement from the brief, and where it lives.
 | D. Free / affordable / premium indoor measures | Budget-filtered action list with benefits and limitations | `pages/IndoorAir.tsx` |
 | D. Room configurator: dimensions, volume, budget, purifier, vulnerability | Sliders + budget + purifier toggle; vulnerability raises ACH target to 6 | `pages/IndoorAir.tsx`, `utils/impact.ts` |
 | D. Safety: no ozone, no unsafe DIY, no houseplant claims, no blind ventilation | Explicit "never recommended" panel; ventilation gated on outdoor forecast | `pages/IndoorAir.tsx`, `services/recommendationService.ts` |
-| E. Sustainable alternatives: transport, household, community | New alternatives tab with current behaviour, alternative, cost, practicality, benefit, avoided emissions, method, assumptions | `pages/ImpactSimulator.tsx`, `constants/alternatives.ts` |
-| E. Never imply instant city AQI change | Stated in the simulator, planner and alternatives panel | `pages/ImpactSimulator.tsx` |
-| F. Scenario 1 transport with inputs and weekly/monthly/annual savings | Distance, days, mode, occupancy → weekly/monthly/annual kg CO₂e + ±20% range | `utils/impact.ts`, `pages/ImpactSimulator.tsx` |
-| F. Scenario 2 outdoor exposure vs schedule | Exposure proxy comparison between now and the cleaner window, explicitly not dose | `utils/impact.ts`, `pages/ImpactSimulator.tsx` |
-| F. Scenario 3 indoor improvements comparison | Source control vs filtration vs ventilation with sizing and caveats | `pages/ImpactSimulator.tsx` |
+| E. Sustainable alternatives: transport, household, community | New alternatives tab with current behaviour, alternative, cost, practicality, benefit, avoided emissions, method, assumptions | `pages/ImpactSimulator.tsx`, `components/impact/AlternativesPanel.tsx`, `constants/alternatives.ts` |
+| E. Never imply instant city AQI change | Stated in the simulator, planner and alternatives panel | `components/impact/AlternativesPanel.tsx` |
+| F. Scenario 1 transport with inputs and weekly/monthly/annual savings | Distance, days, mode, occupancy → weekly/monthly/annual kg CO₂e + ±20% range | `utils/impact.ts`, `components/impact/TransportPanel.tsx` |
+| F. Scenario 2 outdoor exposure vs schedule | Exposure proxy comparison between now and the cleaner window, explicitly not dose | `utils/impact.ts`, `components/impact/ExposurePanel.tsx` |
+| F. Scenario 3 indoor improvements comparison | Source control vs filtration vs ventilation with sizing and caveats | `components/impact/IndoorPanel.tsx` |
 | F. Deterministic testable maths, versioned factors, assumptions, uncertainty | Pure functions, exported factor version and assumptions, 24 dedicated tests | `utils/impact.ts`, `utils/impact.test.ts` |
 | G. Family protection for all six groups | Dedicated page, group sections marked as applying to the household | `pages/FamilyProtection.tsx` |
+| G. Share guidance with the household or community | "Pass this on" card copies a plain-text summary built from public model values; household-specific actions are excluded so a forwarded message does not disclose the household | `utils/share.ts`, `pages/FamilyProtection.tsx` |
 | G. No diagnosis/prescription, cautious public-health framing | Disclaimer on every relevant page; escalation language only | `pages/FamilyProtection.tsx`, `pages/AIAdvisor.tsx` |
-| H. Conversational assistant with location, data, profile, sources, fallback | `/api/chat` + `askVayu` + intent-based fallback; suggestions; source labels | `api/chat.ts`, `services/chatService.ts`, `pages/AIAdvisor.tsx` |
+| H. Conversational assistant with location, data, profile, sources, fallback | `/api/chat` + `askVayu` + intent-based fallback; questions derived from today's category and the saved household; source labels | `api/chat.ts`, `services/chatService.ts`, `pages/AIAdvisor.tsx` |
 | H. Not the only way to use the app | Every major feature has a structured page and navigation entry | `components/AppShell.tsx` |
 
 ### Cross-cutting
@@ -264,9 +269,9 @@ Each requirement from the brief, and where it lives.
 | Structured JSON output, validated | Zod schemas on request and response; enum-constrained plan sections |
 | Security: no key exposure, validation, rate limits, headers, CSP | See `docs/SECURITY.md` |
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
-| Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~404 kB raw / ~126 kB gzip |
-| Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion |
-| Testing: AQI, recommendations, direct fallback, impact maths | 203 tests; see `docs/TESTING.md` |
+| Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~413 kB raw / ~129 kB gzip |
+| Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion, audited contrast tokens |
+| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 213 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 

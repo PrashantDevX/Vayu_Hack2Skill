@@ -33,14 +33,14 @@ Tests      180 passed (180)
 
 ## 3. Coverage
 
-Measured 2026-11-19 over `src/utils`, `src/services`, `src/constants` and `api`:
+Measured 2026-11-21 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 94.87% (1018/1073) | 90% |
-| Branches | 86.28% (824/955) | 78% |
-| Functions | 97.67% (168/172) | 92% |
-| Lines | 98.15% (850/866) | 93% |
+| Statements | 95.00% | 90% |
+| Branches | 86.59% | 78% |
+| Functions | 97.76% | 92% |
+| Lines | 98.20% | 93% |
 
 Per-module highlights:
 
@@ -58,6 +58,7 @@ Per-module highlights:
 | `src/services/officialService.ts` | 96.9% | 91.9% |
 | `src/utils/aqi.ts` | 92.2% | 84.3% |
 | `src/utils/impact.ts` | 98.4% | 98.2% |
+| `src/utils/share.ts` | 100% | 94.7% |
 | `src/constants/aqi.ts` | 100% | 100% |
 
 Thresholds are deliberately a little below the measured numbers so honest small refactors do not fail the
@@ -145,12 +146,17 @@ This is a fabrication guard: it fails if someone later adds an unsupported numbe
 
 ### 4.7 Integration and components
 
-- `src/App.test.tsx` (3 tests) renders the app against a mocked Open-Meteo payload and asserts the computed
+- `src/App.test.tsx` (9 tests) renders the app against a mocked Open-Meteo payload and asserts the computed
   estimate appears, the "not an official CPCB station reading" wording is present, no removed demo persona is
   rendered, the AI entry point exists, onboarding appears for a first-time user, all seven nav routes are
-  present, and the sustainable-alternatives tab is reachable with no fabricated kilogram figures.
+  present, the sustainable-alternatives tab is reachable with no fabricated kilogram figures, and the
+  family-share action copies a summary that excludes household-specific actions.
 - `src/components/AqiBadge.test.tsx` (2 tests) asserts category + number + colour class, and the explicit
   unavailable state.
+- `src/utils/share.test.ts` (8 tests) asserts the share summary carries the reading, both windows and the first
+  three actions; states unavailable data instead of omitting it; always labels the number as a model estimate;
+  never includes household-specific recommendations or profile values; and that a blocked clipboard is
+  reported as a failure rather than thrown.
 
 ---
 

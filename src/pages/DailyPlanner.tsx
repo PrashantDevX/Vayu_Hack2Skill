@@ -1,11 +1,22 @@
 import { useState } from 'react'
-import { Check, ChevronDown, RefreshCw, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ArrowRight, Check, ChevronDown, Sparkles } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { PageHeading } from '../components/PageHeading'
+import { RefreshButton } from '../components/RefreshButton'
+import { SourceLinks } from '../components/SourceLinks'
 import { recommendationTitle } from '../services/recommendationService'
 import { requestAiBrief } from '../services/planService'
-import type { AiBrief } from '../types'
+import type { AiBrief, RecommendationCategory } from '../types'
+import { pollutantValue } from '../utils/aqi'
 import { formatRelativeTime } from '../utils/date'
-import { SOURCE_METADATA } from '../constants/sources'
+
+/** The deeper surface for each action: what to do, then where to check it. */
+function actionLink(category: RecommendationCategory): { to: string; label: string } {
+  if (category === 'commute') return { to: '/impact', label: 'Model the emissions difference' }
+  if (category === 'indoor' || category === 'night') return { to: '/indoor', label: 'Size filtration for your room' }
+  return { to: '/air-quality', label: 'Check the hourly forecast' }
+}
 
 export default function DailyPlanner() {
   const { planner, air, profile, checklist, toggleChecklistItem, refresh, location } = useApp()
@@ -25,7 +36,7 @@ export default function DailyPlanner() {
         city: location.city,
         aqi: assessment?.aqi ?? null,
         category: assessment?.category ?? null,
-        pm25: assessment?.pollutants.find(item => item.key === 'pm25')?.value ?? null,
+        pm25: pollutantValue(assessment?.pollutants, 'pm25'),
         bestWindow: planner.bestWindow ? `${planner.bestWindow.start}–${planner.bestWindow.end}` : null,
         worstWindow: planner.worstWindow ? `${planner.worstWindow.start}–${planner.worstWindow.end}` : null,
         profile,
@@ -39,17 +50,12 @@ export default function DailyPlanner() {
 
   return (
     <div className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">PERSONALIZED ROUTINE</p>
-          <h1>Daily planner</h1>
-          <p>Actions adapted to the current model forecast and your saved household preferences.</p>
-        </div>
-        <button type="button" className="secondary-button" onClick={refresh} disabled={air.refreshing}>
-          <RefreshCw size={16} className={air.refreshing ? 'spin' : ''} aria-hidden="true" />
-          {air.refreshing ? 'Refreshing…' : 'Refresh data'}
-        </button>
-      </div>
+      <PageHeading
+        eyebrow="PERSONALIZED ROUTINE"
+        title="Daily planner"
+        description="Actions adapted to the current model forecast and your saved household preferences."
+        action={<RefreshButton onClick={refresh} refreshing={air.refreshing} />}
+      />
 
       {/* The deterministic plan is the product. It comes first; the AI brief is
           optional wording on top of it and sits further down the page. */}
@@ -102,6 +108,7 @@ export default function DailyPlanner() {
 
           {planner.recommendations.map(item => {
             const checked = checklist.includes(item.id)
+            const link = actionLink(item.category)
             return (
               <article className={`recommendation-card ${checked ? 'completed' : ''}`} key={item.id}>
                 <div className="recommendation-header">
@@ -135,6 +142,7 @@ export default function DailyPlanner() {
                     <p><strong>Expected benefit:</strong> {item.benefitType}</p>
                     <p><strong>Limitations:</strong> {item.limitations}</p>
                     <p><strong>Sources:</strong> {item.sources.join(' · ')}</p>
+                    <Link className="text-link" to={link.to}>{link.label} <ArrowRight size={14} aria-hidden="true" /></Link>
                   </div>
                 </details>
               </article>
@@ -193,10 +201,7 @@ export default function DailyPlanner() {
                 </div>
               ))}
             </div>
-            {brief.sources.length > 0 && <p className="data-note">Sources: {brief.sources.map((id, index) => {
-              const source = SOURCE_METADATA[id]
-              return <span key={id}>{index > 0 ? ' · ' : ''}<a href={source.url} target={source.url.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{source.name}</a></span>
-            })}</p>}
+            {brief.sources.length > 0 && <p className="data-note"><SourceLinks sources={brief.sources} prefix="Sources: " /></p>}
             <p className="data-note">AI explanations are validated for shape and length, but they are not a substitute for the deterministic plan or medical advice.</p>
           </>
         )}

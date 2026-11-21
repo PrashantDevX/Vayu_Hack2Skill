@@ -1,6 +1,26 @@
-# Vayu third remediation sprint results
+# Vayu verification results
 
-Run: 2026-11-19 (Asia/Calcutta). Latest Git `main` was clean and aligned with `origin/main` before edits (`a27b948`). No production deployment or browser checks were run. No credentials or provider response containing household data were recorded.
+## Run 2026-11-21 — code-quality and alignment pass
+
+Scope: shared page primitives, simulator decomposition, planner construction, advisor suggestions,
+planner→surface links, family share summary, contrast tokens. No API contract or data-provenance rule changed.
+
+| Command | Result | Evidence |
+|---|---|---|
+| `npm test` | PASS | 26 files, 213 tests pass. |
+| `npm run test:coverage` | PASS | Statements 95.00%; branches 86.59%; functions 97.76%; lines 98.20%. Thresholds (90/78/92/93) met. |
+| `npm run typecheck` | PASS | `tsc -b` exit 0. |
+| `npm run lint` | PASS | `oxlint` exit 0, zero warnings. |
+| `npm run build` | PASS | Production build succeeded; initial JS 413.29 kB / 128.86 kB gzip; AirQuality route chunk 443.95 kB / 124.51 kB gzip. |
+| Contrast audit | PASS | 103 low-contrast grey declarations replaced by `--muted` (#626c65, ≥4.8:1) and `--muted-strong` (#4f5b53, ≥6.2:1). Remaining sub-4.5:1 declarations are light-on-dark text or decorative icons, verified against their actual background. |
+| axe / Lighthouse | NOT RUN | No browser automation or audit tooling installed in this environment. |
+| Deployed smoke | SEPARATE RUN | `npm run smoke` is run after the deploy, not part of this table. |
+
+---
+
+## Historical run 2026-11-19 — third remediation sprint results
+
+Run: 2026-11-19 (Asia/Calcutta). Latest Git `main` was clean and aligned with `origin/main` before edits (`a27b948`). No production deployment or browser checks were run. No credentials or provider response containing household data were recorded. The numbers below are the state at that date and are **not** the current numbers; see the run above.
 
 ## Automated checks
 

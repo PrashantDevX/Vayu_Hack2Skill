@@ -1,6 +1,7 @@
 import {
   AQI_CATEGORY_RANGES,
   AQI_SCALE_MAX,
+  CATEGORY_CLASS,
   MIN_VALID_POLLUTANTS,
   POLLUTANT_BY_KEY,
   POLLUTANTS,
@@ -150,6 +151,19 @@ export function dominantPollutant(assessment: AqiAssessment): PollutantResult | 
     if (dominant === null || item.subIndex > (dominant.subIndex ?? 0)) dominant = item
   }
   return dominant
+}
+
+/** The concentration of one pollutant, or null when it is missing. */
+export function pollutantValue(
+  pollutants: readonly PollutantResult[] | undefined,
+  key: PollutantKey,
+): number | null {
+  return pollutants?.find(item => item.key === key)?.value ?? null
+}
+
+/** CSS band class for a category, with a neutral class when it is unknown. */
+export function categoryBand(category: AqiCategory | null | undefined): string {
+  return category ? CATEGORY_CLASS[category] : 'unavailable'
 }
 
 export function formatPollutantValue(value: number | null, key: PollutantKey): string {

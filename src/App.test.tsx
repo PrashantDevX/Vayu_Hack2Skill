@@ -171,6 +171,31 @@ describe('application integration', () => {
     expect(screen.getByText(/not an official CPCB station AQI/i)).toBeInTheDocument()
   }, 25000)
 
+  it('copies a shareable household summary without leaking profile details', async () => {
+    window.history.pushState({}, '', '/family')
+    localStorage.setItem('vayu.onboarded.v1', 'true')
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    render(<App />)
+
+    const button = await screen.findByRole('button', { name: /Copy household guidance/i }, { timeout: 15000 })
+    fireEvent.click(button)
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const shared = String(writeText.mock.calls[0]?.[0])
+    // The summary is built from public model values and deterministic actions.
+    expect(shared).toContain('Vayu household air-quality summary')
+    expect(shared).toContain('Estimated CPCB-style model AQI 200')
+    expect(shared).toContain('not an official CPCB station reading')
+    // No household-specific action or exact profile value in a forwarded message.
+    expect(shared).not.toMatch(/school commute|older household members|outdoor work breaks/i)
+    expect(shared).not.toMatch(/\d+\.\d{3,}/)
+
+    expect(await screen.findByRole('button', { name: /Copied to clipboard/i })).toBeInTheDocument()
+    expect(screen.getByText(/Paste it into a message/i)).toBeInTheDocument()
+  }, 25000)
+
   it('shows the sustainable alternatives without inventing kilogram savings', async () => {
     window.history.pushState({}, '', '/impact')
     render(<App />)

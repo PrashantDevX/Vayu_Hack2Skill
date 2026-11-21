@@ -130,7 +130,10 @@ the transport figures are numeric, and they're planning estimates with a version
 2. Read the banner: the category summary plus the cleaner window.
 3. Read one elevated-AQI instruction for children and one for older adults.
 4. Point at the mask card: fit matters, masks do not replace exposure reduction.
-5. Point at the closing line: not a diagnosis, not a prescription.
+5. Open the "Pass this on" card, press **Copy household guidance**, and open the preview. The copied text is a
+   short, plain-language summary of the reading and the first actions — and it deliberately leaves out the
+   actions that exist only because of your household profile.
+6. Point at the closing line: not a diagnosis, not a prescription.
 
 ---
 
@@ -167,7 +170,7 @@ it reaches the DOM."
 - CPCB methodology implemented and tested, including the coverage rule.
 - Model vs official separation that survives on screen.
 - AI that is validated, rate-limited and optional.
-- 203 tests, coverage gate, clean typecheck and lint, production build.
+- 213 tests, coverage gate, clean typecheck and lint, production build.
 
 ---
 
