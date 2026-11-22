@@ -14,7 +14,7 @@ Latest verified result (2026-11-22):
 
 ```
 Test Files  29 passed (29)
-Tests      234 passed (234)
+Tests      235 passed (235)
 ```
 
 ---
@@ -37,10 +37,10 @@ Measured 2026-11-22 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 95.14% | 90% |
+| Statements | 95.15% | 90% |
 | Branches | 87.94% | 78% |
 | Functions | 97.79% | 92% |
-| Lines | 98.26% | 93% |
+| Lines | 98.27% | 93% |
 
 Per-module highlights:
 
@@ -164,7 +164,7 @@ This is a fabrication guard: it fails if someone later adds an unsupported numbe
 - `src/components/AqiBadge.test.tsx` (2 tests) asserts category + number + colour class, and the explicit
   unavailable state.
 - `src/components/DayTimeline.test.tsx` (3 tests) checks available and unavailable forecast windows.
-- `src/components/ProfileForm.test.tsx` (2 tests) checks profile editing and invalid numeric input handling.
+- `src/components/ProfileForm.test.tsx` (3 tests) checks profile editing, invalid numeric input handling and rejection of an undeclared select value.
 - `src/utils/share.test.ts` (9 tests) asserts the share summary carries the reading, both windows and the first
   three actions; states unavailable data instead of omitting it; always labels the number as a model estimate;
   never includes household-specific recommendations or profile values; and that a blocked clipboard is

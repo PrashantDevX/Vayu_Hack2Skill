@@ -184,10 +184,10 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ```
 Test Files  29 passed (29)
-Tests      234 passed (234)
+Tests      235 passed (235)
 
 Coverage (v8, utils/services/constants/api):
-Statements  95.14%   Branches 87.94%   Functions 97.79%   Lines 98.26%
+Statements  95.15%   Branches 87.94%   Functions 97.79%   Lines 98.27%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -237,8 +237,8 @@ Each requirement from the brief, and where it lives.
 | --- | --- | --- |
 | A. Onboarding: city search, optional geolocation, manual coords, confirmation | Four-step modal with a review step; Open-Meteo geocoding; permission-based geolocation with denial handling; lat/lon validation; rounded storage | `components/OnboardingDialog.tsx`, `components/LocationSearch.tsx`, `utils/profile.ts` |
 | A. Household profile: adults, children, elderly, outdoor worker, sensitivities | Profile form used in onboarding and settings, Zod-validated | `components/ProfileForm.tsx`, `utils/profile.ts` |
-| A. Lifestyle: commute, distance, timing, exercise, cooking fuel, ventilation, purifier, room size, budget | All captured and consumed by the planner, indoor page and simulator | `types.ts`, `constants/aqi.ts` |
-| A. Budget bands | Free / Under ₹1,500 / ₹1,500–₹12,000 / Premium solutions | `constants/aqi.ts` |
+| A. Lifestyle: commute, distance, timing, exercise, cooking fuel, ventilation, purifier, room size, budget | All captured and consumed by the planner, indoor page and simulator | `types.ts`, `constants/profileOptions.ts` |
+| A. Budget bands | Free / Under ₹1,500 / ₹1,500–₹12,000 / Premium solutions | `constants/profileOptions.ts` |
 | A. Skip optional questions, edit and delete locally | "Use defaults" skip, editable settings, reset profile, delete all local data | `pages/Settings.tsx`, `context/AppContext.tsx` |
 | B. Live dashboard: AQI, category, PM2.5, PM10, NO₂, SO₂, CO, O₃, NH₃ | Current model snapshot with per-pollutant table | `services/aqiService.ts`, `pages/AirQuality.tsx` |
 | B. Station, distance, timestamp, provider, freshness | Official card shows station/distance/time/provider when supplied; provenance note shows relative freshness and staleness | `components/DataProvenance.tsx` |
@@ -277,7 +277,7 @@ Each requirement from the brief, and where it lives.
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
 | Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~413 kB raw / ~129 kB gzip |
 | Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion, audited contrast tokens |
-| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 234 tests; see `docs/TESTING.md` |
+| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 235 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 

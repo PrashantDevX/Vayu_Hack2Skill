@@ -47,7 +47,10 @@ export function TransportPanel({
         </label>
         <label htmlFor="sim-alternative">
           Alternative mode
-          <select id="sim-alternative" value={alternative} onChange={event => onAlternativeChange(event.target.value as CommuteMode)}>
+          <select id="sim-alternative" value={alternative} onChange={event => {
+            const next = COMMUTE_MODES.find(mode => mode === event.target.value)
+            if (next !== undefined) onAlternativeChange(next)
+          }}>
             {COMMUTE_MODES.map(mode => <option key={mode}>{mode}</option>)}
           </select>
         </label>

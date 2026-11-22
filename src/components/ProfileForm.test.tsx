@@ -30,4 +30,13 @@ describe('ProfileForm numeric fields', () => {
     fireEvent.blur(adults)
     expect(adults).toHaveValue(2)
   })
+
+  it('ignores a select value that is not in the declared commute options', () => {
+    const onChange = vi.fn()
+    render(<ProfileForm value={DEFAULT_PROFILE} onChange={onChange} section="lifestyle" idPrefix="test" />)
+
+    fireEvent.change(screen.getByLabelText('Usual commute'), { target: { value: 'Rocket' } })
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

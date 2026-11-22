@@ -85,7 +85,8 @@ key and restores in-memory defaults.
 
 - one request per location change, with a monotonically increasing `requestId` so stale responses are dropped
 - `loading` for the first fetch, `refreshing` for manual/auto refresh
-- failure keeps the previous snapshot, sets `isStale`, and surfaces a banner
+- a same-location refresh failure keeps that location's last snapshot, sets `isStale`, and surfaces a banner
+- changing location hides the previous location's data immediately; if the new fetch fails, the UI shows unavailable
 - failure with no previous data sets an explicit "no estimate substituted" error
 - 15-minute auto-refresh, skipped while the tab is hidden
 

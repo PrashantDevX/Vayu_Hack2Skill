@@ -66,8 +66,8 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, current file count | 234 tests pass in 29 files |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.14 / 87.94 / 97.79 / 98.26 (stmts/branch/fns/lines; verified 2026-11-22) |
+| `npm test` | Vitest, current file count | 235 tests pass in 29 files |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.15 / 87.94 / 97.79 / 98.27 (stmts/branch/fns/lines; verified 2026-11-22) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
@@ -95,6 +95,7 @@ src/
   types.ts                    all shared domain types (single source of truth)
   constants/aqi.ts            CPCB breakpoints, categories, budget/mode enums, defaults, cities
   constants/alternatives.ts   qualitative household + community sustainable alternatives
+  constants/profileOptions.ts shared profile enums for types, validation and form options
   utils/aqi.ts                sub-index interpolation, coverage rule, dominance, formatting, band helper
   utils/impact.ts             transport factors, exposure proxy, CADR, budget ranking
   utils/date.ts               relative time, local date key, Open-Meteo hour labels
@@ -676,7 +677,7 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 - `src/index.css` retains late override rules and should only be consolidated with a visual diff and contrast audit.
 - AI response rules are deterministic text checks, not a semantic safety proof. Live Gemini answers still need rubric-based evaluation; an HTTP/schema pass is not a quality score.
 
-## 18. Final adapter and location-state review (2026-11-22)
+## 18. Final residual type-boundary review (2026-11-22)
 
 ### Additional findings and changes
 
@@ -685,11 +686,15 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 | The Node/Vercel adapter accumulated request bytes before `readJsonBody()` could enforce route-specific caps. | Oversized bodies could consume memory in the adapter even though the route later returned 413. | The adapter now rejects declared lengths above 16,000 bytes and stops retaining streamed chunks when that limit is crossed. It returns a no-store 413 without calling the route handler; oversized declared streams are drained through Node's `resume()`. The normal 12/16 KB route limits remain in place. |
 | `useAirQuality()` retained a prior location's snapshot during a location transition until the next effect ran. | For a render, the UI could associate a valid reading with the newly selected city. | Requests and displayed state are keyed by normalized city and quantized coordinates. Data, error and timestamp are hidden as soon as the render's location differs; a failed same-location refresh still retains the last-known reading as stale. |
 | `useLocalStorageState()` asserted a function type to apply React state updates. | The cast duplicated React's own updater behavior and made a type invariant less clear. | The setter now forwards values/updaters directly to React's state setter. |
+| Profile choice values were duplicated between union types, Zod schemas and form options; event handlers asserted raw DOM strings into the unions. | Duplicated lists can drift, and the casts erase the fact that browser event values are arbitrary strings. | Added one tuple-based profile option module, derived the domain unions and schemas from it, rendered the same values in selects, and ignored undeclared values. Added a regression for an invalid commute selection. The API-reachable re-export uses `.js` to preserve Node ESM resolution. |
+| The archived sprint checklist still showed completed work as unchecked, and the architecture note implied old-location data remains visible after a city change. | Stale project context can make a reviewer think essential work is incomplete or misunderstand the current unavailable/stale behavior. | Marked the historical checklist as archived with current completion status and explicit deferred live-evaluation checks; corrected the architecture and challenge-matrix references. |
+
+Files updated in this final review pass: `src/constants/profileOptions.ts`, `src/constants/aqi.ts`, `src/types.ts`, `src/utils/profile.ts`, `src/components/ProfileForm.tsx`, `src/components/ProfileForm.test.tsx`, `src/components/impact/TransportPanel.tsx`, `src/pages/IndoorAir.tsx`, `README.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`, `docs/THIRD_SPRINT_CHECKLIST.md`, and this file.
 
 ### Validation and constraints
 
-- Full local validation: typecheck PASS, lint PASS with zero warnings, 29 test files / 234 tests PASS, coverage PASS (95.14% statements / 87.94% branches / 97.79% functions / 98.26% lines), production build PASS.
-- Production build chunks: initial chunk 413.80 kB / 129.14 kB gzip; AirQuality 443.95 kB / 124.51 kB gzip. No new dependency was added.
+- Full local validation: typecheck PASS, lint PASS with zero warnings, 29 test files / 235 tests PASS, coverage PASS (95.15% statements / 87.94% branches / 97.79% functions / 98.27% lines), production build PASS.
+- Production build chunks: initial chunk 413.70 kB / 129.08 kB gzip; AirQuality 443.95 kB / 124.51 kB gzip. No new dependency was added.
 - `git diff --check` PASS. Current branch `main`; GitHub reports public visibility and exactly one remote branch (`main`). GitHub repository size is 1,085 KiB; the current local included files, including new tests and untracked files, total about 0.83 MiB.
 - Changes are local only. Do not push, deploy, or submit without explicit user approval after review. The external evaluator has not scored this change set; 97.27/100 and Code Quality 89 remain the last reported evaluation.
 

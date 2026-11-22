@@ -1,4 +1,12 @@
 import type { SourceId } from './constants/sources'
+import type {
+  BUDGET_BANDS,
+  COMMUTE_MODES,
+  COOKING_FUELS,
+  EXERCISE_FREQUENCIES,
+  VENTILATION_QUALITIES,
+  WORK_TIMINGS,
+} from './constants/profileOptions'
 
 export type PollutantKey = 'pm25' | 'pm10' | 'no2' | 'so2' | 'co' | 'o3' | 'nh3'
 
@@ -114,21 +122,17 @@ export interface AirQualityResult {
   refresh: () => void
 }
 
-export type CommuteMode = 'Metro' | 'Bus' | 'Carpool' | 'Petrol car' | 'Two-wheeler' | 'Walking or cycling'
+export type CommuteMode = (typeof COMMUTE_MODES)[number]
 
-export type BudgetBand =
-  | 'Free'
-  | 'Under ₹1,500'
-  | '₹1,500–₹12,000'
-  | 'Premium solutions'
+export type BudgetBand = (typeof BUDGET_BANDS)[number]
 
-export type WorkTiming = 'Early morning' | 'Daytime' | 'Evening' | 'Night' | 'Flexible'
+export type WorkTiming = (typeof WORK_TIMINGS)[number]
 
-export type ExerciseFrequency = 'Rarely' | '1–2 times a week' | '3–4 times a week' | 'Daily'
+export type ExerciseFrequency = (typeof EXERCISE_FREQUENCIES)[number]
 
-export type CookingFuel = 'LPG or piped gas' | 'Electric' | 'Biomass or wood' | 'Mixed'
+export type CookingFuel = (typeof COOKING_FUELS)[number]
 
-export type VentilationQuality = 'Good cross-ventilation' | 'Single-side windows' | 'Poor or sealed'
+export type VentilationQuality = (typeof VENTILATION_QUALITIES)[number]
 
 export interface Profile {
   adults: number

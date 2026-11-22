@@ -1,4 +1,6 @@
-import type { AqiCategory, BudgetBand, CommuteMode, PollutantKey, Profile } from '../types'
+import type { AqiCategory, PollutantKey, Profile } from '../types'
+
+export { BUDGET_BANDS, COMMUTE_MODES } from './profileOptions.js'
 
 /**
  * CPCB National AQI breakpoints. Values are the official category boundaries,
@@ -135,22 +137,6 @@ export const DEFAULT_PROFILE: Profile = {
   roomAreaSqFt: 180,
   budget: 'Under ₹1,500',
 }
-
-export const COMMUTE_MODES: readonly CommuteMode[] = [
-  'Metro',
-  'Bus',
-  'Carpool',
-  'Petrol car',
-  'Two-wheeler',
-  'Walking or cycling',
-]
-
-export const BUDGET_BANDS: readonly BudgetBand[] = [
-  'Free',
-  'Under ₹1,500',
-  '₹1,500–₹12,000',
-  'Premium solutions',
-]
 
 export const POPULAR_CITIES = [
   { city: 'New Delhi', latitude: 28.6139, longitude: 77.209 },

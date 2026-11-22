@@ -1,5 +1,13 @@
 import { z } from 'zod'
-import { BUDGET_BANDS, COMMUTE_MODES, DEFAULT_PROFILE } from '../constants/aqi'
+import { DEFAULT_PROFILE } from '../constants/aqi'
+import {
+  BUDGET_BANDS,
+  COMMUTE_MODES,
+  COOKING_FUELS,
+  EXERCISE_FREQUENCIES,
+  VENTILATION_QUALITIES,
+  WORK_TIMINGS,
+} from '../constants/profileOptions'
 import type { Profile } from '../types'
 
 const count = z.number().int().min(0).max(20)
@@ -11,15 +19,15 @@ export const profileSchema = z.object({
   outdoorWorker: z.boolean(),
   respiratorySensitivity: z.boolean(),
   cardiovascularSensitivity: z.boolean(),
-  commute: z.enum(COMMUTE_MODES as [Profile['commute'], ...Profile['commute'][]]),
+  commute: z.enum(COMMUTE_MODES),
   commuteDistanceKm: z.number().min(0).max(300),
-  workTiming: z.enum(['Early morning', 'Daytime', 'Evening', 'Night', 'Flexible']),
-  exerciseFrequency: z.enum(['Rarely', '1–2 times a week', '3–4 times a week', 'Daily']),
-  cookingFuel: z.enum(['LPG or piped gas', 'Electric', 'Biomass or wood', 'Mixed']),
-  ventilation: z.enum(['Good cross-ventilation', 'Single-side windows', 'Poor or sealed']),
+  workTiming: z.enum(WORK_TIMINGS),
+  exerciseFrequency: z.enum(EXERCISE_FREQUENCIES),
+  cookingFuel: z.enum(COOKING_FUELS),
+  ventilation: z.enum(VENTILATION_QUALITIES),
   hasPurifier: z.boolean(),
   roomAreaSqFt: z.number().min(20).max(5000),
-  budget: z.enum(BUDGET_BANDS as [Profile['budget'], ...Profile['budget'][]]),
+  budget: z.enum(BUDGET_BANDS),
 })
 
 export const locationSchema = z.object({

@@ -126,7 +126,10 @@ export default function IndoorAir() {
           </label>
           <label htmlFor="room-budget">
             Budget
-            <select id="room-budget" value={budget} onChange={event => setBudget(event.target.value as BudgetBand)}>
+            <select id="room-budget" value={budget} onChange={event => {
+              const next = BUDGET_BANDS.find(band => band === event.target.value)
+              if (next !== undefined) setBudget(next)
+            }}>
               {BUDGET_BANDS.map(band => <option key={band}>{band}</option>)}
             </select>
           </label>
