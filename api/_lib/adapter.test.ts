@@ -204,6 +204,46 @@ describe('withVercelRuntime', () => {
     expect(res.body).toBeUndefined()
   })
 
+  it('rejects an oversized declared body before invoking the handler', async () => {
+    let handlerCalled = false
+    const wrapped = withVercelRuntime(async () => {
+      handlerCalled = true
+      return Response.json({ ok: true })
+    })
+    const req = new FakeNodeRequest({
+      method: 'POST',
+      url: '/api/plan',
+      headers: { 'content-length': '16001' },
+    })
+    const res = new FakeNodeResponse()
+
+    await wrapped(asNode(req), asRes(res))
+
+    expect(handlerCalled).toBe(false)
+    expect(res.statusCode).toBe(413)
+    expect(JSON.parse(decode(res.body))).toEqual({ error: 'Request too large' })
+  })
+
+  it('stops retaining streamed chunks once the adapter body limit is exceeded', async () => {
+    let handlerCalled = false
+    const wrapped = withVercelRuntime(async () => {
+      handlerCalled = true
+      return Response.json({ ok: true })
+    })
+    const req = new FakeNodeRequest({
+      method: 'POST',
+      url: '/api/chat',
+      chunks: [new Uint8Array(12_000), new Uint8Array(5_000), new Uint8Array(5_000)],
+    })
+    const res = new FakeNodeResponse()
+
+    await wrapped(asNode(req), asRes(res))
+
+    expect(handlerCalled).toBe(false)
+    expect(res.statusCode).toBe(413)
+    expect(JSON.parse(decode(res.body))).toEqual({ error: 'Request too large' })
+  })
+
   it('sets every Set-Cookie header rather than merging them', async () => {
     const wrapped = withVercelRuntime(async () => {
       const headers = new Headers()

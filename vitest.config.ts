@@ -17,9 +17,8 @@ export default defineConfig({
         'api/**/*.ts',
       ],
       exclude: ['**/*.test.*', 'src/test/**'],
-      // Measured 2026-11-18: 92.95% statements, 81.64% branches,
-      // 95.17% functions, 96.42% lines. Thresholds sit just below the
-      // measured floor so regressions fail the build without flaking.
+      // Thresholds sit below the current measured floor so regressions fail
+      // the build without making small coverage fluctuations flaky.
       thresholds: {
         statements: 90,
         branches: 78,

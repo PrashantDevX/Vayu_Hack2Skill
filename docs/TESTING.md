@@ -13,8 +13,8 @@ npm run test:coverage  # v8 coverage, thresholds enforced
 Latest verified result (2026-11-22):
 
 ```
-Test Files  28 passed (28)
-Tests      230 passed (230)
+Test Files  29 passed (29)
+Tests      234 passed (234)
 ```
 
 ---
@@ -37,10 +37,10 @@ Measured 2026-11-22 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 95.06% | 90% |
-| Branches | 87.77% | 78% |
-| Functions | 97.80% | 92% |
-| Lines | 98.23% | 93% |
+| Statements | 95.14% | 90% |
+| Branches | 87.94% | 78% |
+| Functions | 97.79% | 92% |
+| Lines | 98.26% | 93% |
 
 Per-module highlights:
 
@@ -136,7 +136,7 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 | `api/_lib/requestBody.test.ts` (2) | bounded streamed body parsing, malformed input and size rejection |
 | `officialService.test.ts` (6) | pollutant-only payload accepted without inventing an AQI; published AQI classified; out-of-scale AQI rejected (not clamped); malformed concentrations rejected; provider reason passed through; Vite-dev and network failure messages |
 | `api/health.test.ts` (2) | flags reflect configuration; response never contains the secret value |
-| `api/_lib/adapter.test.ts` (10) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
+| `api/_lib/adapter.test.ts` (12) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; oversized declared and streamed bodies rejected before handler invocation; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
 | `api/_lib/rateLimit.test.ts` (5) | window allow/block/retry, reset and key isolation, forwarded-header key derivation, shared-store fallback |
 | `api/_lib/gemini.test.ts` (8) | transient detection (503/429/5xx vs 400/403); success skips the retry; one retry after overload; no retry on a configuration fault; exhausted retries throw the last error; a hanging attempt times out within the deadline; an attempt cap of one |
 
@@ -149,7 +149,12 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 
 This is a fabrication guard: it fails if someone later adds an unsupported number.
 
-### 4.7 Integration and components
+### 4.7 Data lifecycle hook — `src/hooks/useAirQuality.test.tsx` (2 tests)
+
+- changing location and failing to fetch clears the prior location's reading and timestamp;
+- a same-location refresh failure retains the last known snapshot and marks it stale.
+
+### 4.8 Integration and components
 
 - `src/App.test.tsx` (11 tests) renders the app against a mocked Open-Meteo payload and asserts the computed
   estimate appears, the "not an official CPCB station reading" wording is present, no removed demo persona is

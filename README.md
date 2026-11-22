@@ -178,15 +178,16 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 | `src/utils/*.test.ts` | CPCB breakpoints and coverage rule, dominance, formatting, transport maths, exposure proxy, CADR, date/locale handling, profile validation, privacy-safe share summary |
 | `src/services/*.test.ts` | HTTP retry/timeout, cache TTL, Open-Meteo normalisation and CO conversion, hourly windowing, official mapping, geocoding, chat/plan fallback, planner personalisation |
 | `api/*.test.ts` | Request validation, method/body limits, rate limits, Gemini success + malformed + failure paths, official-record normalisation, no-secret leakage |
+| `src/hooks/useAirQuality.test.tsx` | A location change never displays the previous location's reading; same-location failures retain clearly stale data |
 | `src/App.test.tsx`, components | Integration render against a mocked provider, provenance wording, navigation, badge states |
 | `src/constants/alternatives.test.ts` | Required alternative fields, and a guard that fails if fabricated kg/tonne claims are added |
 
 ```
-Test Files  28 passed (28)
-Tests      230 passed (230)
+Test Files  29 passed (29)
+Tests      234 passed (234)
 
 Coverage (v8, utils/services/constants/api):
-Statements  95.06%   Branches 87.77%   Functions 97.80%   Lines 98.23%
+Statements  95.14%   Branches 87.94%   Functions 97.79%   Lines 98.26%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -276,7 +277,7 @@ Each requirement from the brief, and where it lives.
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
 | Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~413 kB raw / ~129 kB gzip |
 | Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion, audited contrast tokens |
-| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 230 tests; see `docs/TESTING.md` |
+| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 234 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 

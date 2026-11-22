@@ -13,6 +13,8 @@
  */
 
 type WebHandler = (request: Request) => Promise<Response> | Response
+const MAX_ADAPTER_BODY_BYTES = 16_000
+const BODY_TOO_LARGE = Symbol('body-too-large')
 
 interface NodeHeaders {
   [name: string]: string | string[] | undefined
@@ -24,6 +26,7 @@ export interface NodeIncomingMessage {
   url?: string
   headers?: NodeHeaders
   on: (event: 'data' | 'end' | 'error', listener: (chunk?: unknown) => void) => void
+  resume?: () => unknown
 }
 
 /** The subset of `ServerResponse` this adapter writes. */
@@ -75,20 +78,38 @@ function toFetchUrl(req: NodeIncomingMessage): URL {
   return new URL(raw, `https://${host}`)
 }
 
-async function readBody(req: NodeIncomingMessage): Promise<Uint8Array | null> {
+async function readBody(
+  req: NodeIncomingMessage,
+): Promise<Uint8Array | null | typeof BODY_TOO_LARGE> {
   const method = (req.method ?? 'GET').toUpperCase()
   if (method === 'GET' || method === 'HEAD') return null
+  const declaredLength = Number(nodeHeader(req.headers, 'content-length') ?? 0)
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_ADAPTER_BODY_BYTES) {
+    // Let Node discard the unread bytes so the connection does not remain
+    // blocked behind a request body that this adapter will never consume.
+    req.resume?.()
+    return BODY_TOO_LARGE
+  }
 
   const chunks: Uint8Array[] = []
+  let total = 0
+  let tooLarge = false
   await new Promise<void>((resolve, reject) => {
     req.on('data', chunk => {
-      if (chunk instanceof Uint8Array) chunks.push(new Uint8Array(chunk))
+      if (tooLarge || !(chunk instanceof Uint8Array)) return
+      total += chunk.byteLength
+      if (total > MAX_ADAPTER_BODY_BYTES) {
+        tooLarge = true
+        chunks.length = 0
+        return
+      }
+      chunks.push(new Uint8Array(chunk))
     })
     req.on('end', () => resolve())
     req.on('error', error => reject(error))
   })
 
-  const total = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
+  if (tooLarge) return BODY_TOO_LARGE
   if (total === 0) return null
   const merged = new Uint8Array(total)
   let offset = 0
@@ -130,6 +151,13 @@ export function withVercelRuntime(handler: WebHandler): VercelHandler {
 
     const nodeRequest = request
     const body = await readBody(nodeRequest)
+    if (body === BODY_TOO_LARGE) {
+      await writeResponse(response, Response.json(
+        { error: 'Request too large' },
+        { status: 413, headers: { 'Cache-Control': 'no-store' } },
+      ))
+      return
+    }
     const init: RequestInit = {
       method: nodeRequest.method ?? 'GET',
       headers: toFetchHeaders(nodeRequest.headers),

@@ -66,8 +66,8 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, current file count | 230 tests pass in 28 files |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.06 / 87.77 / 97.80 / 98.23 (stmts/branch/fns/lines; verified 2026-11-22) |
+| `npm test` | Vitest, current file count | 234 tests pass in 29 files |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.14 / 87.94 / 97.79 / 98.26 (stmts/branch/fns/lines; verified 2026-11-22) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
@@ -609,7 +609,7 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 ### First-cycle controls and validation record
 
 - Stay on the existing `main` branch; do not push or deploy during this review.
-- GitHub reports the repository public, with one branch (`main`) and size 1,007 KiB (below 10 MB). The working tree remains on `main`; no push or deploy was performed.
+- At the first-cycle check GitHub reported a public repository, one `main` branch and 1,007 KiB. The later verification is recorded in §18; no push or deploy was performed.
 - First-cycle validation on 2026-11-22: typecheck PASS, lint PASS (zero warnings), 28 test files / 224 tests PASS, coverage PASS (95.00% statements / 86.59% branches / 97.76% functions / 98.21% lines), and production build PASS. The continued review and latest validation are recorded in §17.
 - No official evaluation score can be inferred from local checks; the 97.27 second-submission result remains the baseline.
 
@@ -631,7 +631,10 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 | AI negation detection treated any earlier negation in a sentence as applying to every later safety match. | A response could begin with a warning and then recommend a prohibited device/filter, bypassing the deterministic safety gate. | Scoped negation to the nearby phrase and split on punctuation and connectors; added direct and endpoint-level regressions, including wording from the archived unsafe purifier answer. |
 | `assessAqi()` duplicated the full insufficient-coverage result for two independent failure reasons and retained nullable sub-index values after filtering. | Repeated result construction can drift, while the nullable type makes valid-index invariants harder to read. | Unified coverage-reason selection and narrowed valid sub-index values with a type predicate. Existing AQI boundary and coverage tests pass. |
 | Forecast-window selection assumed adjacent array entries were adjacent hours. | A missing timestamp in an otherwise valid provider series could be presented as a continuous cleaner/worse window. | Added a consecutive-hour check with missing/duplicate-hour and midnight-wrap regressions; discontinuous windows are now omitted. |
-| Test documentation had stale totals/coverage and a corrupted path character. | Contributors could not reliably locate tests or compare the documented gate to current output. | Updated README, testing docs and this file to the measured 230-test results; repaired the rate-limit test path and documented the added AI-output suite. |
+| Test documentation had stale totals/coverage and a corrupted path character. | Contributors could not reliably locate tests or compare the documented gate to current output. | Updated README, testing docs and this file to the measured test results; repaired the rate-limit test path and documented the added AI-output suite. |
+| The Vercel adapter buffered the full Node request stream before the route-level 12/16 KB JSON limits ran. | A large request could consume memory before the handler rejected it, weakening the effective resource bound. | Added a 16 KB adapter cap for declared and chunked bodies, returning 413 before handler invocation and discarding streamed bytes after the cap; two adapter regressions cover both paths. |
+| A location change could render one frame with the previous location's reading before the fetch effect cleared state. | A reading can be accurate for its source but misleading when shown under a different selected city. | Tagged the active fetch state by normalized city and quantized coordinates; render output hides old-location data, error and timestamp immediately. Added hook tests for location-change failure and same-location stale retention. |
+| The local-storage setter manually reimplemented React's state updater semantics with a function cast. | The cast obscured an invariant already expressed by React's `SetStateAction<T>` contract. | Passed the value/updater directly to `setValue`, removing the assertion without changing caller behavior. |
 
 ### Files added to the continued-review change set
 
@@ -648,17 +651,23 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 - `src/services/recommendationService.ts`
 - `src/services/recommendationService.test.ts`
 - `src/utils/aqi.test.ts`
+- `api/_lib/adapter.ts`
+- `api/_lib/adapter.test.ts`
+- `src/hooks/useAirQuality.ts`
+- `src/hooks/useAirQuality.test.tsx`
+- `src/hooks/useLocalStorage.ts`
+- `vitest.config.ts`
 - `README.md`
 - `docs/TESTING.md`
 - `AGENTS.md`
 
 ### Latest validation
 
-- `npm run typecheck`, `npm run lint`, and `npm test`: PASS; 28 files / 230 tests.
-- `npm run test:coverage`: PASS; statements 95.06%, branches 87.77%, functions 97.80%, lines 98.23%.
-- `npm run build`: PASS; main chunk 413.53 kB raw / 129.05 kB gzip, AirQuality chunk 443.95 kB raw / 124.51 kB gzip.
+- `npm run typecheck`, `npm run lint`, and `npm test`: PASS; 29 files / 234 tests.
+- `npm run test:coverage`: PASS; statements 95.14%, branches 87.94%, functions 97.79%, lines 98.26%.
+- `npm run build`: PASS; main chunk 413.80 kB raw / 129.14 kB gzip, AirQuality chunk 443.95 kB raw / 124.51 kB gzip.
 - `npm audit` and `npm audit --omit=dev`: zero vulnerabilities.
-- PowerShell parser validation for `scripts/evaluate-live-ai.ps1`: PASS. GitHub repo remains public, one `main` branch, 1,007 KiB. No push/deploy.
+- PowerShell parser validation for `scripts/evaluate-live-ai.ps1`: PASS. Latest repository check: public, one `main` branch, 1,085 KiB on GitHub; current included local working files total about 0.83 MiB. No push/deploy.
 - No evaluator rerun is available; the latest external score remains the second-submission baseline, 97.27/100.
 
 ### Remaining code-quality work
@@ -666,3 +675,26 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 - The planner remains a large content-heavy function; extracting recommendation families is still possible but would move many health-critical strings and needs a more isolated refactor with focused UI/content review.
 - `src/index.css` retains late override rules and should only be consolidated with a visual diff and contrast audit.
 - AI response rules are deterministic text checks, not a semantic safety proof. Live Gemini answers still need rubric-based evaluation; an HTTP/schema pass is not a quality score.
+
+## 18. Final adapter and location-state review (2026-11-22)
+
+### Additional findings and changes
+
+| Finding | Why it matters | Change |
+| --- | --- | --- |
+| The Node/Vercel adapter accumulated request bytes before `readJsonBody()` could enforce route-specific caps. | Oversized bodies could consume memory in the adapter even though the route later returned 413. | The adapter now rejects declared lengths above 16,000 bytes and stops retaining streamed chunks when that limit is crossed. It returns a no-store 413 without calling the route handler; oversized declared streams are drained through Node's `resume()`. The normal 12/16 KB route limits remain in place. |
+| `useAirQuality()` retained a prior location's snapshot during a location transition until the next effect ran. | For a render, the UI could associate a valid reading with the newly selected city. | Requests and displayed state are keyed by normalized city and quantized coordinates. Data, error and timestamp are hidden as soon as the render's location differs; a failed same-location refresh still retains the last-known reading as stale. |
+| `useLocalStorageState()` asserted a function type to apply React state updates. | The cast duplicated React's own updater behavior and made a type invariant less clear. | The setter now forwards values/updaters directly to React's state setter. |
+
+### Validation and constraints
+
+- Full local validation: typecheck PASS, lint PASS with zero warnings, 29 test files / 234 tests PASS, coverage PASS (95.14% statements / 87.94% branches / 97.79% functions / 98.26% lines), production build PASS.
+- Production build chunks: initial chunk 413.80 kB / 129.14 kB gzip; AirQuality 443.95 kB / 124.51 kB gzip. No new dependency was added.
+- `git diff --check` PASS. Current branch `main`; GitHub reports public visibility and exactly one remote branch (`main`). GitHub repository size is 1,085 KiB; the current local included files, including new tests and untracked files, total about 0.83 MiB.
+- Changes are local only. Do not push, deploy, or submit without explicit user approval after review. The external evaluator has not scored this change set; 97.27/100 and Code Quality 89 remain the last reported evaluation.
+
+### Remaining risks and recommendation
+
+- No Vercel deployment or live smoke was performed, so the new adapter cap has unit coverage but has not been exercised by a new deployed runtime. Local `vercel dev` is known to fail on this Windows host; run `npm run smoke` only after an approved deployment.
+- Browser end-to-end, Lighthouse/axe, live provider behavior, and live Gemini semantic safety are not established by this local validation. Security, efficiency, accessibility, and alignment were protected by narrow changes and regression checks, but their external scores cannot be claimed unchanged without a fresh evaluator run.
+- The planner's content-heavy implementation and append-structured CSS remain known maintainability limits. They were left intact because larger restructuring has higher health-guidance and visual-regression risk than the concrete fixes above.

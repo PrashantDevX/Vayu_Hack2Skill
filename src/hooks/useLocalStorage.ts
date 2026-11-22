@@ -21,7 +21,7 @@ export function useLocalStorageState<T>(
   }, [key, value])
 
   const update = useCallback((next: T | ((previous: T) => T)) => {
-    setValue(previous => (typeof next === 'function' ? (next as (prev: T) => T)(previous) : next))
+    setValue(next)
   }, [])
 
   return [value, update]
