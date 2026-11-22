@@ -209,4 +209,18 @@ describe('POST /api/chat', () => {
     expect(result.answer).not.toContain('box-fan')
     expect(result.sources).toContain('OPEN_METEO_MODEL')
   })
+
+  it('does not let a negated phrase hide a separate unsafe filtration suggestion', async () => {
+    process.env.GEMINI_API_KEY = 'test-key'
+    generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        answer: 'Avoid incense and use an improvised filter attached to a fan.',
+      }),
+    })
+
+    const response = await handler(request(validBody, { ip: '10.0.0.31' }))
+    const result = (await response.json()) as { source: string; answer: string }
+    expect(result.source).toBe('fallback')
+    expect(result.answer).not.toContain('improvised filter')
+  })
 })

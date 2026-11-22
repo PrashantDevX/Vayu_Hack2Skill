@@ -9,7 +9,7 @@ import type {
   PollutantValues,
   WeatherNow,
 } from '../types'
-import { cacheGet, cacheSet, coordinateKey } from './cache'
+import { createCache, coordinateKey } from './cache'
 import { fetchJson } from './http'
 import { fetchOfficialAqi } from './officialService'
 
@@ -242,19 +242,25 @@ interface CachedAir {
 }
 
 const AIR_CACHE_TTL_MS = 10 * 60 * 1000
+const airCache = createCache<CachedAir>()
+
+/** Test-only: reset model responses so provider cases stay independent. */
+export function clearAirQualityCache(): void {
+  airCache.clear()
+}
 
 export async function fetchAirQuality(
   location: LocationState,
   options: { force?: boolean } = {},
 ): Promise<AirQualitySnapshot> {
   const key = `air:${coordinateKey(location.latitude, location.longitude)}`
-  const cached = options.force ? null : cacheGet<CachedAir>(key)
+  const cached = options.force ? null : airCache.get(key)
   let cachedAir = cached?.value ?? null
   let fetchedAt = cached ? new Date(cached.fetchedAt).toISOString() : null
 
   if (!cachedAir) {
     cachedAir = await fetchModel(location.latitude, location.longitude)
-    const entry = cacheSet(key, cachedAir, AIR_CACHE_TTL_MS)
+    const entry = airCache.set(key, cachedAir, AIR_CACHE_TTL_MS)
     fetchedAt = new Date(entry.fetchedAt).toISOString()
   }
 

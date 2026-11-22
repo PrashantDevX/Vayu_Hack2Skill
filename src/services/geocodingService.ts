@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { Place } from '../types'
-import { cacheGet, cacheSet } from './cache'
+import { createCache } from './cache'
 import { fetchJson } from './http'
 
 const geocodingSchema = z.object({
@@ -18,12 +18,18 @@ const geocodingSchema = z.object({
 })
 
 const SEARCH_TTL_MS = 60 * 60 * 1000
+const searchCache = createCache<Place[]>()
+
+/** Test-only: reset search responses so provider cases stay independent. */
+export function clearGeocodingCache(): void {
+  searchCache.clear()
+}
 
 export async function searchCities(query: string, limit = 5): Promise<Place[]> {
   const trimmed = query.trim()
   if (trimmed.length < 2) return []
   const key = `geo:${trimmed.toLowerCase()}:${limit}`
-  const cached = cacheGet<Place[]>(key)
+  const cached = searchCache.get(key)
   if (cached) return cached.value
 
   const url =
@@ -40,6 +46,6 @@ export async function searchCities(query: string, limit = 5): Promise<Place[]> {
     latitude: result.latitude,
     longitude: result.longitude,
   }))
-  cacheSet(key, places, SEARCH_TTL_MS)
+  searchCache.set(key, places, SEARCH_TTL_MS)
   return places
 }

@@ -29,6 +29,15 @@ function addHours(label: string, hours: number): string {
   return `${String((hour + hours) % 24).padStart(2, '0')}:${minute}`
 }
 
+function hasConsecutiveHours(points: readonly HourlyPoint[]): boolean {
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1]
+    const current = points[index]
+    if (!previous || !current || addHours(previous.label, 1) !== current.label) return false
+  }
+  return true
+}
+
 export function findBestWorstWindows(hourly: HourlyPoint[], windowHours = 2): {
   best: PollutionWindow | null
   worst: PollutionWindow | null
@@ -38,6 +47,7 @@ export function findBestWorstWindows(hourly: HourlyPoint[], windowHours = 2): {
 
   for (let index = 0; index + windowHours <= hourly.length; index += 1) {
     const slice = hourly.slice(index, index + windowHours)
+    if (!hasConsecutiveHours(slice)) continue
     const aqiValues = slice
       .map(point => point.aqi)
       .filter((value): value is number => value !== null && value !== undefined)

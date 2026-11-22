@@ -1,6 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from 'vitest'
-import { inspectAiText, isChatOutputRelevant, isPlanSectionRelevant } from './aiOutput'
+import { chatSourceIds, inspectAiText, isChatOutputRelevant, isPlanSectionRelevant, planSourceIds } from './aiOutput'
 
 describe('AI output safety and relevance checks', () => {
   it.each([
@@ -56,6 +56,25 @@ describe('AI output safety and relevance checks', () => {
     expect(inspectAiText('Open the windows now while AQI is high.', { aqi: 180 })).toContain('blind_ventilation')
   })
 
+  it('does not let an earlier warning hide a later unsafe recommendation', () => {
+    expect(inspectAiText(
+      'Avoid incense and use an improvised filter attached to a fan.',
+      { aqi: 180 },
+    )).toContain('unsafe_diy_filtration')
+    expect(inspectAiText(
+      'Do not use ozone devices, but install an ozone generator in the bedroom.',
+      { aqi: 180 },
+    )).toContain('ozone_device')
+    expect(inspectAiText(
+      'Avoid incense or buy two ozone generators for the bedroom.',
+      { aqi: 180 },
+    )).toContain('ozone_device')
+    expect(inspectAiText(
+      'Avoid incense and use improvised DIY box-fan filters using MERV-rated filters securely attached with tape, provided they use safe electrical connections.',
+      { aqi: 180 },
+    )).toContain('unsafe_diy_filtration')
+  })
+
   it('accepts natural wording for a plan section, not just its keywords', () => {
     // The live model wrote this for the "Indoor environment" title. It is on
     // topic, but matched none of the original keywords.
@@ -65,5 +84,25 @@ describe('AI output safety and relevance checks', () => {
     )).toBe(true)
     expect(isPlanSectionRelevant('Night-time environment', 'Keep the bedroom window closed and run the purifier on low.'))
       .toBe(true)
+    expect(isPlanSectionRelevant('Unrecognised section', 'Any guidance text.')).toBe(false)
+  })
+
+  it('adds source identifiers only when the answer has corresponding context data', () => {
+    expect(chatSourceIds({ aqi: null, pm25: null })).toEqual([])
+    expect(chatSourceIds({ aqi: null, pm25: 25 })).toEqual(['OPEN_METEO_MODEL'])
+    expect(chatSourceIds({ aqi: 120, pm25: null })).toEqual(['OPEN_METEO_MODEL', 'CPCB_AQI_METHODOLOGY'])
+
+    expect(planSourceIds({
+      location: { aqi: null, pm25: null },
+      windows: { best: null, worst: null },
+    })).toEqual([])
+    expect(planSourceIds({
+      location: { aqi: null, pm25: null },
+      windows: { best: { start: '10:00' }, worst: null },
+    })).toEqual(['OPEN_METEO_MODEL'])
+    expect(planSourceIds({
+      location: { aqi: 120, pm25: null },
+      windows: { best: null, worst: null },
+    })).toEqual(['OPEN_METEO_MODEL', 'CPCB_AQI_METHODOLOGY'])
   })
 })

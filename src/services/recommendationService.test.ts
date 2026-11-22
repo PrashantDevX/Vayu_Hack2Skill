@@ -46,6 +46,19 @@ describe('forecast windows', () => {
     expect(findBestWorstWindows([], 2)).toEqual({ best: null, worst: null })
   })
 
+  it('does not treat missing or duplicated hours as a continuous comparison window', () => {
+    const points = hourly([50, 500, 10])
+    points[1] = { ...points[1]!, label: '02:00' }
+    expect(findBestWorstWindows(points, 2)).toEqual({ best: null, worst: null })
+  })
+
+  it('keeps valid windows continuous across midnight', () => {
+    const points = hourly([80, 120])
+    points[0] = { ...points[0]!, label: '23:00' }
+    points[1] = { ...points[1]!, label: '00:00' }
+    expect(findBestWorstWindows(points, 2).best).toMatchObject({ start: '23:00', end: '01:00' })
+  })
+
   it('rejects invalid window lengths', () => {
     expect(() => findBestWorstWindows([], 0)).toThrow()
   })

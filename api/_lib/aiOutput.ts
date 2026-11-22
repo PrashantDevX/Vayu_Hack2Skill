@@ -34,9 +34,10 @@ const SAFETY_RULES: readonly { code: AiRejectionCode; pattern: RegExp }[] = [
 /**
  * Safety rules are enforced on what the model *recommends*, not on what it warns
  * against. A sentence like "keep windows shut and avoid any improvised filtration
- * devices" is the behaviour we want, yet the naive pattern match flagged it as an
- * unsafe DIY recommendation and threw away an otherwise valid brief. Matches are
- * therefore ignored when a negation cue appears in the same clause.
+ * devices" is the behaviour we want, yet a naive pattern match flagged it as an
+ * unsafe DIY recommendation and threw away an otherwise valid brief. A nearby
+ * negation can excuse the match, but an earlier warning cannot hide a separate
+ * unsafe recommendation after a connector such as "but" or "and".
  */
 function isNegated(text: string, index: number): boolean {
   const clauseStart = Math.max(
@@ -47,7 +48,8 @@ function isNegated(text: string, index: number): boolean {
     text.lastIndexOf('?', index - 1),
   )
   const clause = text.slice(clauseStart + 1, index)
-  return /\b(?:never|avoid\w*|do not|don't|does not|doesn't|cannot|can't|will not|won't|should not|shouldn't|must not|no longer|no|not|without|refrain\w*|instead of|rather than|prohibit\w*)\b/i.test(clause)
+  const phrase = clause.split(/[,;:]|\b(?:and|or|but|however|instead|then|yet|also)\b/i).at(-1) ?? clause
+  return /\b(?:never|avoid\w*|do not|don't|does not|doesn't|cannot|can't|will not|won't|should not|shouldn't|must not|no longer|no|not|without|refrain\w*|instead of|rather than|prohibit\w*)\b(?:\W+\w+){0,6}\W*$/i.test(phrase)
 }
 
 function hasUnnegatedMatch(pattern: RegExp, text: string): boolean {

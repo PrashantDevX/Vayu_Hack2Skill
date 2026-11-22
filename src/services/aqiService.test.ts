@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildHourly, fetchAirQuality } from './aqiService'
-import { cacheClear } from './cache'
+import { buildHourly, clearAirQualityCache, fetchAirQuality } from './aqiService'
 import type { LocationState } from '../types'
 
 const location: LocationState = {
@@ -60,7 +59,7 @@ function mockProviders(official: unknown = { available: false, reason: 'Not conf
 }
 
 beforeEach(() => {
-  cacheClear()
+  clearAirQualityCache()
   vi.unstubAllGlobals()
 })
 
@@ -153,7 +152,7 @@ describe('Open-Meteo model adapter', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: true }, 503)))
     await expect(fetchAirQuality(location)).rejects.toThrow()
 
-    cacheClear()
+    clearAirQualityCache()
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {

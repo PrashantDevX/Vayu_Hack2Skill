@@ -66,8 +66,8 @@ Node 20+ is expected. Install once with `npm install`.
 | `npm run dev` | Vite dev server on http://localhost:5173 | UI works; `/api/*` returns 404 (see §9) |
 | `npm run typecheck` | `tsc -b` across app, node and api projects | clean |
 | `npm run lint` | oxlint | clean, zero warnings |
-| `npm test` | Vitest, current file count | 224 tests pass in 28 files |
-| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.00 / 86.59 / 97.76 / 98.21 (stmts/branch/fns/lines; verified 2026-11-22) |
+| `npm test` | Vitest, current file count | 230 tests pass in 28 files |
+| `npm run test:coverage` | Vitest + v8 coverage, thresholds enforced | 95.06 / 87.77 / 97.80 / 98.23 (stmts/branch/fns/lines; verified 2026-11-22) |
 | `npm run build` | `tsc -b && vite build` → `dist/` | succeeds; initial chunk ~413 kB / ~129 kB gzip |
 | `npm run preview` | Serve the production build | UI works; same `/api` caveat as `dev` |
 | `npm run smoke` | Calls the **deployed** API over HTTP and asserts every endpoint returns its documented status | all checks PASS; the only test that can catch a serverless module-resolution failure |
@@ -490,7 +490,7 @@ result. The latest pre-final-cycle result is recorded in §16.
 | Code Quality | 88 | 97 | Shared page primitives, decomposed simulator, single-source recommendation composition, typed CSS vars, no dead aliases |
 | Security | 99 | 99 | Unchanged: server-only keys, Zod on every boundary, CSP in `vercel.json`, privacy-safe share text |
 | Efficiency | 100 | 100 | Unchanged: lazy routes, Recharts isolated in the air-quality chunk, in-memory cache |
-| Testing | 99 | 99 | 224 tests in 28 files, coverage 95.00 / 86.59 / 97.76 / 98.20 |
+| Testing | 99 | 99 | Historical sprint result: 224 tests in 28 files, coverage 95.00 / 86.59 / 97.76 / 98.20 |
 | Accessibility | 96 | 98 | Contrast tokens audited to ≥4.8:1 (body) and ≥6.2:1 (labels); decorative gauge `aria-hidden`; list semantics for reading chips |
 | Problem Statement Alignment | 93 | 98 | Condition-aware advisor questions, planner actions link to their modelling surface, family/community share summary |
 | **Overall** | **94.16** | **97+** | |
@@ -606,11 +606,11 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 - `scripts/evaluate-live-ai.ps1`
 - `AGENTS.md`
 
-### Submission controls and validation record
+### First-cycle controls and validation record
 
 - Stay on the existing `main` branch; do not push or deploy during this review.
 - GitHub reports the repository public, with one branch (`main`) and size 1,007 KiB (below 10 MB). The working tree remains on `main`; no push or deploy was performed.
-- Final validation on 2026-11-22: typecheck PASS, lint PASS (zero warnings), 28 test files / 224 tests PASS, coverage PASS (95.00% statements / 86.59% branches / 97.76% functions / 98.21% lines), and production build PASS.
+- First-cycle validation on 2026-11-22: typecheck PASS, lint PASS (zero warnings), 28 test files / 224 tests PASS, coverage PASS (95.00% statements / 86.59% branches / 97.76% functions / 98.21% lines), and production build PASS. The continued review and latest validation are recorded in §17.
 - No official evaluation score can be inferred from local checks; the 97.27 second-submission result remains the baseline.
 
 ### Remaining risks
@@ -618,3 +618,51 @@ Code Quality 89, Security 100, Efficiency 100, Testing 99, Accessibility 100 and
 - The planner and stylesheet retain the documented complexity; their broad refactoring is higher risk than the targeted type-safety fixes.
 - Live Gemini semantic quality, browser end-to-end behavior, Lighthouse/axe, and real-world provider behavior are not established by the local unit/build checks.
 - Final readiness is conditional on complete validation and confirming there are no critical regressions.
+
+---
+
+## 17. Continued deep quality review (2026-11-22)
+
+### Additional findings and changes
+
+| Finding | Why it matters | Change |
+| --- | --- | --- |
+| Cache retrieval used `cacheGet<T>(stringKey)` and returned `entry as CacheEntry<T>` without proving that the key held `T`. | The type parameter was caller-selected, so unrelated cache values or colliding keys could be misrepresented at compile time. | Replaced the shared untyped store with `createCache<T>()`; the air-quality and geocoding services now own separate typed maps. Added typed isolation coverage and service-specific test reset functions. |
+| AI negation detection treated any earlier negation in a sentence as applying to every later safety match. | A response could begin with a warning and then recommend a prohibited device/filter, bypassing the deterministic safety gate. | Scoped negation to the nearby phrase and split on punctuation and connectors; added direct and endpoint-level regressions, including wording from the archived unsafe purifier answer. |
+| `assessAqi()` duplicated the full insufficient-coverage result for two independent failure reasons and retained nullable sub-index values after filtering. | Repeated result construction can drift, while the nullable type makes valid-index invariants harder to read. | Unified coverage-reason selection and narrowed valid sub-index values with a type predicate. Existing AQI boundary and coverage tests pass. |
+| Forecast-window selection assumed adjacent array entries were adjacent hours. | A missing timestamp in an otherwise valid provider series could be presented as a continuous cleaner/worse window. | Added a consecutive-hour check with missing/duplicate-hour and midnight-wrap regressions; discontinuous windows are now omitted. |
+| Test documentation had stale totals/coverage and a corrupted path character. | Contributors could not reliably locate tests or compare the documented gate to current output. | Updated README, testing docs and this file to the measured 230-test results; repaired the rate-limit test path and documented the added AI-output suite. |
+
+### Files added to the continued-review change set
+
+- `api/_lib/aiOutput.ts`
+- `api/_lib/aiOutput.test.ts`
+- `api/chat.test.ts`
+- `src/services/cache.ts`
+- `src/services/cache.test.ts`
+- `src/services/aqiService.ts`
+- `src/services/aqiService.test.ts`
+- `src/services/geocodingService.ts`
+- `src/services/geocodingService.test.ts`
+- `src/utils/aqi.ts`
+- `src/services/recommendationService.ts`
+- `src/services/recommendationService.test.ts`
+- `src/utils/aqi.test.ts`
+- `README.md`
+- `docs/TESTING.md`
+- `AGENTS.md`
+
+### Latest validation
+
+- `npm run typecheck`, `npm run lint`, and `npm test`: PASS; 28 files / 230 tests.
+- `npm run test:coverage`: PASS; statements 95.06%, branches 87.77%, functions 97.80%, lines 98.23%.
+- `npm run build`: PASS; main chunk 413.53 kB raw / 129.05 kB gzip, AirQuality chunk 443.95 kB raw / 124.51 kB gzip.
+- `npm audit` and `npm audit --omit=dev`: zero vulnerabilities.
+- PowerShell parser validation for `scripts/evaluate-live-ai.ps1`: PASS. GitHub repo remains public, one `main` branch, 1,007 KiB. No push/deploy.
+- No evaluator rerun is available; the latest external score remains the second-submission baseline, 97.27/100.
+
+### Remaining code-quality work
+
+- The planner remains a large content-heavy function; extracting recommendation families is still possible but would move many health-critical strings and needs a more isolated refactor with focused UI/content review.
+- `src/index.css` retains late override rules and should only be consolidated with a visual diff and contrast audit.
+- AI response rules are deterministic text checks, not a semantic safety proof. Live Gemini answers still need rubric-based evaluation; an HTTP/schema pass is not a quality score.

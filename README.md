@@ -183,10 +183,10 @@ Detail and audit findings: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ```
 Test Files  28 passed (28)
-Tests      224 passed (224)
+Tests      230 passed (230)
 
 Coverage (v8, utils/services/constants/api):
-Statements  95.00%   Branches 86.59%   Functions 97.76%   Lines 98.21%
+Statements  95.06%   Branches 87.77%   Functions 97.80%   Lines 98.23%
 ```
 
 Thresholds are enforced in `vitest.config.ts`: 90% statements, 78% branches, 92% functions, 93% lines.
@@ -276,7 +276,7 @@ Each requirement from the brief, and where it lives.
 | Reliability: graceful failure, retries, timeouts, caching, stale data | `services/http.ts`, `services/cache.ts`, `hooks/useAirQuality.ts`, all `/api` handlers |
 | Performance: code-split routes, lazy pages, small initial bundle | `src/App.tsx`; initial chunk ~413 kB raw / ~129 kB gzip |
 | Accessibility | Skip link, labels, table alternatives, dialogs, focus styles, reduced motion, audited contrast tokens |
-| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 224 tests; see `docs/TESTING.md` |
+| Testing: AQI, recommendations, direct fallback, impact maths, share privacy | 230 tests; see `docs/TESTING.md` |
 | Documentation | `README.md`, `AGENTS.md`, six files in `docs/` |
 | No fabricated readings or metrics | Enforced by code structure and by tests (no provider → no number) |
 

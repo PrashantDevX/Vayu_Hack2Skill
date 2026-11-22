@@ -95,15 +95,24 @@ export function buildPollutantResults(
  */
 export function assessAqi(values: PollutantValues, source: DataSourceKind = 'model'): AqiAssessment {
   const pollutants = buildPollutantResults(values, source)
-  const valid = pollutants.filter(item => item.subIndex !== null)
+  const valid = pollutants.filter(
+    (item): item is PollutantResult & { subIndex: number } => item.subIndex !== null,
+  )
   const hasParticulate = valid.some(item => item.key === 'pm25' || item.key === 'pm10')
 
-  if (valid.length < MIN_VALID_POLLUTANTS) {
+  const coverageReason =
+    valid.length < MIN_VALID_POLLUTANTS
+      ? `Only ${valid.length} of ${pollutants.length} pollutants have usable values. CPCB requires at least ${MIN_VALID_POLLUTANTS}, including particulate matter.`
+      : !hasParticulate
+        ? 'No PM2.5 or PM10 reading is available. CPCB requires a particulate-matter sub-index for an overall AQI.'
+        : null
+
+  if (coverageReason !== null) {
     return {
       aqi: null,
       category: null,
       status: 'insufficient-coverage',
-      reason: `Only ${valid.length} of ${pollutants.length} pollutants have usable values. CPCB requires at least ${MIN_VALID_POLLUTANTS}, including particulate matter.`,
+      reason: coverageReason,
       validPollutants: valid.length,
       requiredPollutants: MIN_VALID_POLLUTANTS,
       hasParticulate,
@@ -112,24 +121,8 @@ export function assessAqi(values: PollutantValues, source: DataSourceKind = 'mod
     }
   }
 
-  if (!hasParticulate) {
-    return {
-      aqi: null,
-      category: null,
-      status: 'insufficient-coverage',
-      reason: 'No PM2.5 or PM10 reading is available. CPCB requires a particulate-matter sub-index for an overall AQI.',
-      validPollutants: valid.length,
-      requiredPollutants: MIN_VALID_POLLUTANTS,
-      hasParticulate,
-      pollutants,
-      beyondScale: valid.some(item => item.beyondScale),
-    }
-  }
-
-  const highest = valid.reduce((max, item) =>
-    (item.subIndex ?? 0) > (max.subIndex ?? 0) ? item : max,
-  )
-  const aqi = Math.min(highest.subIndex ?? 0, AQI_SCALE_MAX)
+  const highest = valid.reduce((max, item) => (item.subIndex > max.subIndex ? item : max))
+  const aqi = Math.min(highest.subIndex, AQI_SCALE_MAX)
 
   return {
     aqi,

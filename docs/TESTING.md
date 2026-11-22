@@ -14,7 +14,7 @@ Latest verified result (2026-11-22):
 
 ```
 Test Files  28 passed (28)
-Tests      224 passed (224)
+Tests      230 passed (230)
 ```
 
 ---
@@ -37,10 +37,10 @@ Measured 2026-11-22 over `src/utils`, `src/services`, `src/constants` and `api`:
 
 | Metric | Result | Threshold |
 | --- | --- | --- |
-| Statements | 95.00% | 90% |
-| Branches | 86.59% | 78% |
-| Functions | 97.76% | 92% |
-| Lines | 98.21% | 93% |
+| Statements | 95.06% | 90% |
+| Branches | 87.77% | 78% |
+| Functions | 97.80% | 92% |
+| Lines | 98.23% | 93% |
 
 Per-module highlights:
 
@@ -49,14 +49,16 @@ Per-module highlights:
 | `api/aqi.ts` | 88.43% | 77.46% |
 | `api/chat.ts` | 96.29% | 76.11% |
 | `api/plan.ts` | 92.04% | 86.00% |
-| `api/_lib/aiOutput.ts` | 96.96% | 64.51% |
+| `api/_lib/aiOutput.ts` | 97.05% | 90.90% |
 | `api/_lib/requestBody.ts` | 96.29% | 100% |
 | `api/_lib/rateLimit.ts` | 92.85% | 85.36% |
-| `src/services/aqiService.ts` | 92.30% | 76.59% |
+| `src/services/aqiService.ts` | 92.50% | 76.59% |
+| `src/services/cache.ts` | 100% | 100% |
+| `src/services/recommendationService.ts` | 96.96% | 91.03% |
 | `src/services/geocodingService.ts` | 100% | 100% |
 | `src/services/http.ts` | 95.1% | 90.0% |
 | `src/services/officialService.ts` | 96.9% | 91.9% |
-| `src/utils/aqi.ts` | 92.2% | 84.3% |
+| `src/utils/aqi.ts` | 92.42% | 91.78% |
 | `src/utils/impact.ts` | 98.4% | 98.2% |
 | `src/utils/share.ts` | 100% | 94.7% |
 | `src/constants/aqi.ts` | 100% | 100% |
@@ -71,7 +73,7 @@ by the integration test instead.
 
 ## 4. What each suite protects
 
-### 4.1 AQI maths — `src/utils/aqi.test.ts` (12 tests)
+### 4.1 AQI maths — `src/utils/aqi.test.ts` (10 tests)
 
 - every category boundary, including the off-by-one edges (50/51, 100/101, 200/201, 300/301, 400/401);
 - invalid input rejection (negative, `NaN`, `Infinity`);
@@ -98,7 +100,7 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 - budget ordering;
 - legacy helper stays deterministic.
 
-### 4.3 Planner — `src/services/recommendationService.test.ts` (11 tests)
+### 4.3 Planner — `src/services/recommendationService.test.ts` (14 tests)
 
 - window search picks the actual lowest/highest 2-hour window from supplied values;
 - windows with missing AQI are skipped; no candidates → `null`;
@@ -115,24 +117,27 @@ This suite is the reason a reviewer can trust the number: it fails if the method
 
 | File | Focus |
 | --- | --- |
-| `aqiService.test.ts` (8) | CO µg→mg conversion, hourly start index and labels, weather failure isolation, missing weather fields staying `null` instead of `0`, official separation, cache keyed on rounded coordinates, force refresh, malformed payload errors, insufficient hourly coverage |
+| `aqiService.test.ts` (9) | CO µg→mg conversion, hourly start index and labels, weather failure isolation, missing weather fields staying `null` instead of `0`, official separation, cache keyed on rounded coordinates, force refresh, malformed payload errors, insufficient hourly coverage |
 | `http.test.ts` (5) | success parse, 4xx not retried, invalid/empty body, timeout abort, 5xx retry then success |
-| `cache.test.ts` (3) | TTL expiry, original fetch timestamp preserved, delete, coordinate key |
+| `cache.test.ts` (4) | TTL expiry, original fetch timestamp preserved, delete, coordinate key, typed-cache isolation |
 | `geocodingService.test.ts` (5) | normalisation, short-query short-circuit, missing results, cache + encoding, unexpected payload/error |
-| `chatService.test.ts` (5) | fallback intents use real context, missing AQI admitted, valid Gemini response accepted, request contains no name, fallback on 503/invalid shape |
+| `chatService.test.ts` (11) | fallback intents use real context, missing AQI admitted, valid Gemini response accepted, request contains no name, fallback on 503/invalid shape |
+| `chatFallback.test.ts` (7) | deterministic chat intent routing and fallback guidance |
 | `planService.test.ts` (2) | validated brief accepted, `unavailable` on failure/empty |
 
 ### 4.5 API handlers
 
 | File | Focus |
 | --- | --- |
-| `api/chat.test.ts` (7) | deterministic fallback without a key; 405/400/413 paths; rate limit returns 429 without leaking the key name or value; mocked Gemini success produces a validated answer and a bounded `<user_question>` prompt; a 503 is retried once before succeeding; empty/malformed/unparseable/thrown output all fall back |
-| `api/plan.test.ts` (7) | unavailable without a key; 405/400; rate limit; mocked success with enum titles and prompt constraints; a 503 is retried once; an over-long greeting is clamped at a word boundary instead of discarding a valid brief; invented section title rejected, empty and thrown responses produce specific reasons |
-| `api/aqi.test.ts` (9) | unconfigured provider; city required; method check; official AQI record normalisation; station-distance pass-through with sanity bounds; pollutant-only rows surfaced as station concentrations with `aqi: null`; station grouping and completeness; "New Delhi" → "Delhi" fallback; rate-limit reason; provider failure; per-city caching |
+| `api/chat.test.ts` (37) | deterministic fallback without a key; request validation and body limits; rate limiting; mocked Gemini success; prompt-injection boundaries; safety and relevance rejection; retry and deterministic fallback paths |
+| `api/plan.test.ts` (10) | unavailable without a key; request validation; rate limiting; mocked success with enum titles and prompt constraints; retry; greeting clamp; invalid title and safety/relevance rejection |
+| `api/_lib/aiOutput.test.ts` (14) | unsafe-output checks, nearby negation behavior, plan/chat relevance and source selection |
+| `api/aqi.test.ts` (14) | unconfigured provider; city validation; method check; AQI and station normalisation; pollutant-only concentrations; station grouping; city fallback; rate-limit and provider failures; caching |
+| `api/_lib/requestBody.test.ts` (2) | bounded streamed body parsing, malformed input and size rejection |
 | `officialService.test.ts` (6) | pollutant-only payload accepted without inventing an AQI; published AQI classified; out-of-scale AQI rejected (not clamped); malformed concentrations rejected; provider reason passed through; Vite-dev and network failure messages |
 | `api/health.test.ts` (2) | flags reflect configuration; response never contains the secret value |
 | `api/_lib/adapter.test.ts` (10) | Fetch `Request` passed straight through; Node `(req, res)` adapted (URL from host header, method, headers, streamed body); absolute URL preserved; `localhost` fallback; repeated header values joined; GET/HEAD bodies ignored; non-byte chunks skipped and empty bodies omitted; every `Set-Cookie` set; stream errors reject; invocation without `res` returns an explicit 500 |
-| pi/_lib/rateLimit.test.ts (3) | window allow/block/retry, reset and key isolation, forwarded-header key derivation |
+| `api/_lib/rateLimit.test.ts` (5) | window allow/block/retry, reset and key isolation, forwarded-header key derivation, shared-store fallback |
 | `api/_lib/gemini.test.ts` (8) | transient detection (503/429/5xx vs 400/403); success skips the retry; one retry after overload; no retry on a configuration fault; exhausted retries throw the last error; a hanging attempt times out within the deadline; an attempt cap of one |
 
 ### 4.6 Content guards — `src/constants/alternatives.test.ts` (4 tests)
@@ -146,14 +151,16 @@ This is a fabrication guard: it fails if someone later adds an unsupported numbe
 
 ### 4.7 Integration and components
 
-- `src/App.test.tsx` (9 tests) renders the app against a mocked Open-Meteo payload and asserts the computed
+- `src/App.test.tsx` (11 tests) renders the app against a mocked Open-Meteo payload and asserts the computed
   estimate appears, the "not an official CPCB station reading" wording is present, no removed demo persona is
   rendered, the AI entry point exists, onboarding appears for a first-time user, all seven nav routes are
   present, the sustainable-alternatives tab is reachable with no fabricated kilogram figures, and the
   family-share action copies a summary that excludes household-specific actions.
 - `src/components/AqiBadge.test.tsx` (2 tests) asserts category + number + colour class, and the explicit
   unavailable state.
-- `src/utils/share.test.ts` (8 tests) asserts the share summary carries the reading, both windows and the first
+- `src/components/DayTimeline.test.tsx` (3 tests) checks available and unavailable forecast windows.
+- `src/components/ProfileForm.test.tsx` (2 tests) checks profile editing and invalid numeric input handling.
+- `src/utils/share.test.ts` (9 tests) asserts the share summary carries the reading, both windows and the first
   three actions; states unavailable data instead of omitting it; always labels the number as a model estimate;
   never includes household-specific recommendations or profile values; and that a blocked clipboard is
   reported as a failure rather than thrown.

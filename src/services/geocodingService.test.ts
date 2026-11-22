@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { searchCities } from './geocodingService'
-import { cacheClear } from './cache'
+import { clearGeocodingCache, searchCities } from './geocodingService'
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
 beforeEach(() => {
-  cacheClear()
+  clearGeocodingCache()
   vi.unstubAllGlobals()
 })
 
@@ -67,7 +66,7 @@ describe('city search', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ results: 'nope' })))
     await expect(searchCities('mumbai')).rejects.toThrow('unexpected response')
 
-    cacheClear()
+    clearGeocodingCache()
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: true }, 500)))
     await expect(searchCities('mumbai')).rejects.toThrow()
   })
